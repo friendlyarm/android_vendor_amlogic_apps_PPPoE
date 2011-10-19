@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+    <string name="app_name">宽带拨号</string>
+    
+    <string name="menu_cancel">取消</string>
+    <string name="pppoe_conf_perf_title">宽带拨号配置</string>
+    <string name="pppoe_config_title">宽带拨号配置</string>
+    <string name="pppoe_user_name">用户帐号</string>
+    <string name="pppoe_passwd">密码</string>
+    <string name="pppoe_dial">拨号</string>
+    <string name="pppoe_disconnect">断开</string>
+    <string name="pppoe_waiting_msg">正在拨号,请稍等...</string>
+    <string name="pppoe_conf_summary">宽带拨号配置</string>
+    <string name="pppoe_connect_ok">宽带拨号成功</string>
+    <string name="pppoe_connect_failed">宽带拨号失败</string>
+    <string name="pppoe_disconnect_ok">宽带拨号断开成功</string>
+    <string name="pppoe_disconnect_failed">宽带拨号断开失败</string>
+    <string name="amlogic_ok">确定</string>
+    <string name="pppoe_auto_dial">自动拨号</string>
+</resources>
