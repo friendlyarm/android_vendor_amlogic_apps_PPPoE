@@ -3,6 +3,8 @@ package com.amlogic.PPPoE;
 import java.util.Timer;
 import java.util.TimerTask;
 import com.amlogic.PPPoE.R;
+import android.os.Message;
+import android.os.Handler;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
@@ -32,6 +34,9 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     private static final int PPPOE_STATE_CONNETCING = 2;
     private static final int PPPOE_STATE_CONNECT_FAILED = 4;
 	private static final int PPPOE_STATE_CONNECTED = 8;
+
+	private static final int MSG_CONNECT_TIMEOUT = 0xabcd0000;
+	private static final int MSG_DISCONNECT_TIMEOUT = 0xabcd0010;
 	
     private static final String EXTRA_NAME_STATUS = "status";
     private static final String EXTRA_NAME_ERR_CODE = "err_code";
@@ -50,6 +55,8 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     
     private boolean dia_action_failed = false;
     private CheckBox mCbAutoDial;
+	Timer connect_timer = null;   
+	Timer disconnect_timer = null;   
 
 	public PppoeConfigDialog(Context context)
 	{
@@ -195,17 +202,14 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 	{
 		public void onClick(DialogInterface dialog, int which) 
 		{
-	        Log.d(TAG, "onClick which = " + which);
 			switch (which) {
 	        case android.content.DialogInterface.BUTTON_POSITIVE:
 	        	{
-			        Log.d(TAG, "BUTTON_POSITIVE");
 	        		alertDia.cancel();
 	        		clearSelf();
 	        	}
 	            break;
 	        case android.content.DialogInterface.BUTTON_NEGATIVE:
-		        Log.d(TAG, "BUTTON_NEGATIVE");
 	            break;
 	        default:
 	            break;
@@ -227,20 +231,34 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		if(name != null && passwd != null)
 		{
 			saveInfoData();
-			Timer check_timer = new Timer();   
+			
+			final Handler handler = new Handler() {
+				public void handleMessage(Message msg) {
+	                    switch (msg.what) {
+	                    case MSG_CONNECT_TIMEOUT:
+							waitDialog.cancel();
+							showAlertDialog(context.getResources().getString(R.string.pppoe_connect_failed));
+							break;
+	                    }
+						
+	                    super.handleMessage(msg);
+	            }
+	        };
+
+			connect_timer = new Timer();   
 			TimerTask check_task = new TimerTask()
 			{   
 				public void run() 
 				{   
-					if(connectStatus() != PppoeOperation.PPP_STATUS_CONNECTED) {
-				        Log.d(TAG, "check_task change dia_action_failed as " + dia_action_failed);
-						dia_action_failed = true;
-					}
+					 Message message = new Message();
+	                 message.what = MSG_CONNECT_TIMEOUT;
+	                 handler.sendMessage(message);
 				}   
 			};
 
-	        Log.d(TAG, "Start Timer to check dial status when timeout repeatedly");
-			check_timer.schedule(check_task, 30000);
+
+			//Timeout after 30 seconds
+			connect_timer.schedule(check_task, 30000);
 			
 			showWaitDialog();
 			operation.connect(name, passwd);
@@ -260,16 +278,38 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 	private void handleStopDial()
 	{
 		boolean result = operation.disconnect();
-		if(result == true)
-		{
-			showAlertDialog(this.context.getResources().getString(R.string.pppoe_disconnect_ok));
-		}
-		else
-		{
-			showAlertDialog(this.context.getResources().getString(R.string.pppoe_disconnect_failed));
-		}
+		
+		final Handler handler = new Handler() {
+			public void handleMessage(Message msg) {
+                    switch (msg.what) {
+                    case MSG_DISCONNECT_TIMEOUT:
+						waitDialog.cancel();
+						showAlertDialog(context.getResources().getString(R.string.pppoe_disconnect_ok));
+						break;
+                    }
+					
+                    super.handleMessage(msg);
+            }
+        };
 
+		disconnect_timer = new Timer();   
+		TimerTask check_task = new TimerTask()
+		{   
+			public void run() 
+			{   
+				 Message message = new Message();
+                 message.what = MSG_DISCONNECT_TIMEOUT;
+                 handler.sendMessage(message);
+			}   
+		};
+
+		//Timeout after 10 seconds
+		disconnect_timer.schedule(check_task, 10000);
+		
+		showWaitDialog();
 	}
+
+
 	private void handleCancelDial()
 	{
 		operation.disconnect();
@@ -318,6 +358,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 				if(event == PppoeStateTracker.EVENT_CONNECTED)
 				{
 					waitDialog.cancel();
+					connect_timer.cancel();
 					showAlertDialog(context.getResources().getString(R.string.pppoe_connect_ok));
 				}
 
