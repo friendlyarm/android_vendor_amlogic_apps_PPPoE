@@ -9,7 +9,8 @@
     <string name="pppoe_passwd">密碼</string>
     <string name="pppoe_dial">撥號</string>
     <string name="pppoe_disconnect">斷開</string>
-    <string name="pppoe_waiting_msg">正在撥號,請稍等...</string>
+    <string name="pppoe_dial_waiting_msg">正在撥號,請稍等...</string>
+    <string name="pppoe_hangup_waiting_msg">正在断开撥號,請稍等...</string>
     <string name="pppoe_conf_summary">寬帶撥號配置</string>
     <string name="pppoe_connect_ok">寬帶撥號成功</string>
     <string name="pppoe_connect_failed">寬帶撥號失败</string>

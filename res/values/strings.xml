@@ -9,7 +9,8 @@
     <string name="pppoe_passwd">Password</string>
     <string name="pppoe_dial">Dial</string>
     <string name="pppoe_disconnect">Disconnect</string>
-    <string name="pppoe_waiting_msg">Please wait for dial...</string>
+    <string name="pppoe_dial_waiting_msg">Please wait for dial...</string>
+    <string name="pppoe_hangup_waiting_msg">Please wait for hangup...</string>
     <string name="pppoe_conf_summary">Configure dial</string>
     <string name="pppoe_connect_ok">Connect Ok!</string>
     <string name="pppoe_connect_failed">Connect failed!</string>

@@ -120,12 +120,11 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		super.show();
 	}
 	
-	void showWaitDialog()
+	void showWaitDialog(int id)
 	{
-        Log.d(TAG, "showWaitDialog");
 		waitDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); 
 		waitDialog.setTitle(""); 
-		waitDialog.setMessage(this.context.getResources().getString(R.string.pppoe_waiting_msg));
+		waitDialog.setMessage(this.context.getResources().getString(id));
 		waitDialog.setIcon(null); 
 		waitDialog.setButton(android.content.DialogInterface.BUTTON_POSITIVE,this.context.getResources().getString(R.string.menu_cancel),clickListener); 
 		waitDialog.setIndeterminate(false); 
@@ -260,7 +259,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 			//Timeout after 30 seconds
 			connect_timer.schedule(check_task, 30000);
 			
-			showWaitDialog();
+			showWaitDialog(R.string.pppoe_dial_waiting_msg);
 			operation.connect(name, passwd);
 		}
 	}
@@ -303,10 +302,10 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 			}   
 		};
 
-		//Timeout after 10 seconds
-		disconnect_timer.schedule(check_task, 10000);
+		//Timeout after 5 seconds
+		disconnect_timer.schedule(check_task, 5000);
 		
-		showWaitDialog();
+		showWaitDialog(R.string.pppoe_hangup_waiting_msg);
 	}
 
 
@@ -320,6 +319,12 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 	{
 		public void onClick(DialogInterface dialog, int which) 
 		{
+			//If do not cancel the timer, then discard when disconnecting
+			//will cause APK crash
+			Log.d(TAG, "#####################################");
+			if (disconnect_timer != null)
+				disconnect_timer.cancel();
+			
 			handleCancelDial();
 			waitDialog.cancel();
 			clearSelf();
