@@ -11,6 +11,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
@@ -20,6 +21,18 @@ import com.amlogic.pppoe.PppoeOperation;
 
 public class PppoeConfigDialog extends AlertDialog implements DialogInterface.OnClickListener
 {
+    private static final String PPPOE_DIAL_RESULT_ACTION =
+            "PppoeConfigDialog.PPPOE_DIAL_RESULT";
+
+    private static final int PPPOE_STATE_DISCONNECTED = 1;
+    private static final int PPPOE_STATE_CONNETCING = 2;
+    private static final int PPPOE_STATE_CONNECT_FAILED = 4;
+	private static final int PPPOE_STATE_CONNECTED = 8;
+	
+    private static final String EXTRA_NAME_STATUS = "status";
+    private static final String EXTRA_NAME_ERR_CODE = "err_code";
+	
+	private final String TAG = "PppoeCfgDlg";
 	private View mView;
 	private EditText mPppoeName;
     private EditText mPppoePasswd;
@@ -45,6 +58,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 
 	private void buildDialog(Context context)
 	{
+        Log.d(TAG, "buildDialog");
 		setTitle(R.string.pppoe_config_title);
 		this.setView(mView = getLayoutInflater().inflate(R.layout.pppoe_configure, null));
 		mPppoeName = (EditText)mView.findViewById(R.id.pppoe_name_edit);
@@ -57,19 +71,27 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		if(connectStatus() != PppoeOperation.PPP_STATUS_CONNECTED)
 			this.setButton(BUTTON_POSITIVE, context.getText(R.string.pppoe_dial), this);
 		else{
+			//hide Username
 			mView.findViewById(R.id.user_pppoe_text).setVisibility(View.GONE);
 			mPppoeName.setVisibility(View.GONE);
+
+			//hide Password
 			mView.findViewById(R.id.passwd_pppoe_text).setVisibility(View.GONE);
 			mPppoePasswd.setVisibility(View.GONE);
 			this.setButton(BUTTON_POSITIVE, context.getText(R.string.pppoe_disconnect), this);
 		}
+		
         this.setButton(BUTTON_NEGATIVE, context.getText(R.string.menu_cancel), this);
+
         mCbAutoDial.setChecked(isAutoDial());
 	}
 	
+
+
 	@Override
 	public void show()
 	{
+        Log.d(TAG, "show");
 		getInfoData();
 		if(user_name != null 
 		  && user_passwd != null
@@ -83,11 +105,13 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
         	mPppoeName.setText("");
         	mPppoePasswd.setText("");
         }
+		
 		super.show();
 	}
 	
 	void showWaitDialog()
 	{
+        Log.d(TAG, "showWaitDialog");
 		waitDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); 
 		waitDialog.setTitle(""); 
 		waitDialog.setMessage(this.context.getResources().getString(R.string.pppoe_waiting_msg));
@@ -102,15 +126,14 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		button.setFocusableInTouchMode(true);
 		button.requestFocus();
 		button.requestFocusFromTouch();
-          
 	}
 
 	private void saveInfoData()
 	{
 		SharedPreferences.Editor sharedata = this.context.getSharedPreferences("inputdata", 0).edit();
 		sharedata.clear();
-		sharedata.putString("name",mPppoeName.getText().toString());
-		sharedata.putString("passwd",mPppoePasswd.getText().toString()); 
+		sharedata.putString("name", mPppoeName.getText().toString());
+		sharedata.putString("passwd", mPppoePasswd.getText().toString()); 
 		sharedata.commit();  
 	}
 	private void getInfoData()
@@ -144,6 +167,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 
 	private void showAlertDialog(final String msg)
 	{
+        Log.d(TAG, "showAlertDialog");
 		AlertDialog.Builder ab = new AlertDialog.Builder(context); 
 		alertDia = ab.create();  
 		alertDia.setTitle(" "); 
@@ -167,14 +191,17 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 	{
 		public void onClick(DialogInterface dialog, int which) 
 		{
+	        Log.d(TAG, "onClick which = " + which);
 			switch (which) {
 	        case android.content.DialogInterface.BUTTON_POSITIVE:
 	        	{
+			        Log.d(TAG, "BUTTON_POSITIVE");
 	        		alertDia.cancel();
 	        		clearSelf();
 	        	}
 	            break;
 	        case android.content.DialogInterface.BUTTON_NEGATIVE:
+		        Log.d(TAG, "BUTTON_NEGATIVE");
 	            break;
 	        default:
 	            break;
@@ -188,7 +215,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		dia_action_failed = false;
 		dialRsl = new dialRslReceiver();
 		IntentFilter filter = new IntentFilter();
-		filter.addAction("PppoeConfigDialog.Result_Dial");
+		filter.addAction(PPPOE_DIAL_RESULT_ACTION);
 		context.registerReceiver(dialRsl, filter);
 		
 		String name = mPppoeName.getText().toString();
@@ -201,11 +228,17 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 			{   
 				public void run() 
 				{   
-					if(connectStatus() != PppoeOperation.PPP_STATUS_CONNECTED)
+					if(connectStatus() != PppoeOperation.PPP_STATUS_CONNECTED) {
+				        Log.d(TAG, "check_task change dia_action_failed as " + dia_action_failed);
 						dia_action_failed = true;
+					}
 				}   
 			};
-			check_timer.schedule(check_task, 30000);  
+
+			
+	        Log.d(TAG, "Start Timer to check dial status when timeout repeatedly");
+			check_timer.schedule(check_task, 30000);
+			
 			showWaitDialog();
 			operation.connect(name, passwd);
 			
@@ -218,20 +251,24 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 	{
 		public void run()
 		{
+	        Log.d(TAG, "dialThread (1)dia_action_failed " + dia_action_failed);
 			while(dia_action_failed == false)
 			{
+		        Log.d(TAG, "dialThread (2)dia_action_failed " + dia_action_failed);
 				if(connectStatus() == PppoeOperation.PPP_STATUS_CONNECTED)
 				{
-					Intent intent2 = new Intent("PppoeConfigDialog.Result_Dial");
-			    	intent2.putExtra("dial_result", true);
+					Intent intent2 = new Intent(PPPOE_DIAL_RESULT_ACTION);
+			    	intent2.putExtra(EXTRA_NAME_STATUS, PPPOE_STATE_CONNECTED);
+			        Log.d(TAG, "sendBroadcast CONNECTED");
 			    	context.sendBroadcast(intent2);
 					return;
 				}
 				waitOk(1000);
 			}
 			
-			Intent intent2 = new Intent("PppoeConfigDialog.Result_Dial");
-	    	intent2.putExtra("dial_result", false);
+			Intent intent2 = new Intent(PPPOE_DIAL_RESULT_ACTION);
+	    	intent2.putExtra(EXTRA_NAME_STATUS, PPPOE_STATE_DISCONNECTED);
+	        Log.d(TAG, "sendBroadcast DISCONNECTED");
 	    	context.sendBroadcast(intent2);
 		}
 	}
@@ -245,7 +282,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
         }
 	}
 	
-	private void hanleStopDial()
+	private void handleStopDial()
 	{
 		boolean result = operation.disconnect();
 		if(result == true)
@@ -258,7 +295,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		}
 
 	}
-	private void hanleCancelDial()
+	private void handleCancelDial()
 	{
 		operation.disconnect();
 	}
@@ -268,7 +305,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 	{
 		public void onClick(DialogInterface dialog, int which) 
 		{
-			hanleCancelDial();
+			handleCancelDial();
 			waitDialog.cancel();
 			clearSelf();
 		}
@@ -280,7 +317,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		switch (which) {
         case BUTTON_POSITIVE:
         	if(connectStatus() == PppoeOperation.PPP_STATUS_CONNECTED)
-        		hanleStopDial();
+        		handleStopDial();
         	else
         		handleStartDial();
             break;
@@ -297,7 +334,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		@Override
 		public void onReceive(Context context, Intent intent) 
 		{
-			if(intent.getBooleanExtra("dial_result", false) == true)
+			if(intent.getIntExtra(EXTRA_NAME_STATUS, PPPOE_STATE_DISCONNECTED) == PPPOE_STATE_CONNECTED)
 			{
 				waitDialog.cancel();
 				showAlertDialog(context.getResources().getString(R.string.pppoe_connect_ok));
