@@ -17,6 +17,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+
+import android.net.pppoe.PppoeManager;
+import android.net.pppoe.PppoeStateTracker;
+
 import com.amlogic.pppoe.PppoeOperation;
 
 public class PppoeConfigDialog extends AlertDialog implements DialogInterface.OnClickListener
@@ -215,7 +219,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		dia_action_failed = false;
 		dialRsl = new dialRslReceiver();
 		IntentFilter filter = new IntentFilter();
-		filter.addAction(PPPOE_DIAL_RESULT_ACTION);
+		filter.addAction(PppoeManager.PPPOE_STATE_CHANGED_ACTION);
 		context.registerReceiver(dialRsl, filter);
 		
 		String name = mPppoeName.getText().toString();
@@ -235,43 +239,14 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 				}   
 			};
 
-			
 	        Log.d(TAG, "Start Timer to check dial status when timeout repeatedly");
 			check_timer.schedule(check_task, 30000);
 			
 			showWaitDialog();
 			operation.connect(name, passwd);
-			
-			dialThread dial = new dialThread();
-			dial.start();
 		}
 	}
 	
-	class dialThread extends Thread
-	{
-		public void run()
-		{
-	        Log.d(TAG, "dialThread (1)dia_action_failed " + dia_action_failed);
-			while(dia_action_failed == false)
-			{
-		        Log.d(TAG, "dialThread (2)dia_action_failed " + dia_action_failed);
-				if(connectStatus() == PppoeOperation.PPP_STATUS_CONNECTED)
-				{
-					Intent intent2 = new Intent(PPPOE_DIAL_RESULT_ACTION);
-			    	intent2.putExtra(EXTRA_NAME_STATUS, PPPOE_STATE_CONNECTED);
-			        Log.d(TAG, "sendBroadcast CONNECTED");
-			    	context.sendBroadcast(intent2);
-					return;
-				}
-				waitOk(1000);
-			}
-			
-			Intent intent2 = new Intent(PPPOE_DIAL_RESULT_ACTION);
-	    	intent2.putExtra(EXTRA_NAME_STATUS, PPPOE_STATE_DISCONNECTED);
-	        Log.d(TAG, "sendBroadcast DISCONNECTED");
-	    	context.sendBroadcast(intent2);
-		}
-	}
 	
 	private void waitOk(final int ms)
 	{
@@ -334,17 +309,25 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		@Override
 		public void onReceive(Context context, Intent intent) 
 		{
-			if(intent.getIntExtra(EXTRA_NAME_STATUS, PPPOE_STATE_DISCONNECTED) == PPPOE_STATE_CONNECTED)
-			{
-				waitDialog.cancel();
-				showAlertDialog(context.getResources().getString(R.string.pppoe_connect_ok));
-			}
-			else
-			{
-				operation.disconnect();
-				waitDialog.cancel();
-				showAlertDialog(context.getResources().getString(R.string.pppoe_connect_failed));
-			}
+			String action = intent.getAction();
+			Log.d(TAG, "#####dialRslReceiver: " + action);
+
+	        if(action.equals(PppoeManager.PPPOE_STATE_CHANGED_ACTION)) {
+				int event = intent.getIntExtra(PppoeManager.EXTRA_PPPOE_STATE,PppoeManager.PPPOE_STATE_UNKNOWN);
+				Log.d(TAG, "#####event " + event);
+				if(event == PppoeStateTracker.EVENT_CONNECTED)
+				{
+					waitDialog.cancel();
+					showAlertDialog(context.getResources().getString(R.string.pppoe_connect_ok));
+				}
+
+				if(event == PppoeStateTracker.EVENT_DISCONNECTED)
+				{
+					//waitDialog.cancel();
+					//showAlertDialog(context.getResources().getString(R.string.pppoe_connect_failed));
+				}
+
+        	}
 		}
 	}
 	
