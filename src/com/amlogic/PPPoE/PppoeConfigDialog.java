@@ -51,9 +51,8 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     private PppoeOperation operation = null;
     Context context = null;
     private AlertDialog alertDia = null;
-    private dialRslReceiver dialRsl = null;
+    private PppoeReceiver pppoeReceiver = null;
     
-    private boolean dia_action_failed = false;
     private CheckBox mCbAutoDial;
 	Timer connect_timer = null;   
 	Timer disconnect_timer = null;   
@@ -219,11 +218,11 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 	
 	private void handleStartDial()
 	{
-		dia_action_failed = false;
-		dialRsl = new dialRslReceiver();
+
+		pppoeReceiver = new PppoeReceiver();
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(PppoeManager.PPPOE_STATE_CHANGED_ACTION);
-		context.registerReceiver(dialRsl, filter);
+		context.registerReceiver(pppoeReceiver, filter);
 		
 		String name = mPppoeName.getText().toString();
 		String passwd = mPppoePasswd.getText().toString();
@@ -349,13 +348,13 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		}
 	}
 
-	public class dialRslReceiver extends BroadcastReceiver 
+	public class PppoeReceiver extends BroadcastReceiver 
     {
 		@Override
 		public void onReceive(Context context, Intent intent) 
 		{
 			String action = intent.getAction();
-			Log.d(TAG, "#####dialRslReceiver: " + action);
+			Log.d(TAG, "#####PppoeReceiver: " + action);
 
 	        if(action.equals(PppoeManager.PPPOE_STATE_CHANGED_ACTION)) {
 				int event = intent.getIntExtra(PppoeManager.EXTRA_PPPOE_STATE,PppoeManager.PPPOE_STATE_UNKNOWN);
@@ -379,8 +378,8 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 	
 	private void clearSelf()
 	{
-		if(dialRsl != null)
-			context.unregisterReceiver(dialRsl);
+		if(pppoeReceiver != null)
+			context.unregisterReceiver(pppoeReceiver);
 		((PPPoEActivity)context).finish();
 	}
 
