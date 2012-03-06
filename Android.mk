@@ -7,6 +7,7 @@ LOCAL_JAVA_LIBRARIES := amlogic.pppoe
 LOCAL_SRC_FILES := $(call all-java-files-under, src)
 
 LOCAL_PACKAGE_NAME := PPPoE
+LOCAL_CERTIFICATE := platform
 
 include $(BUILD_PACKAGE)
 

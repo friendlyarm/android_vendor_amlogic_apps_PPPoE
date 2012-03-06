@@ -2,7 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="com.amlogic.PPPoE"
       android:versionCode="1"
-      android:versionName="1.0">
+      android:versionName="1.0"
+      android:sharedUserId="android.uid.system">
+
     <uses-sdk android:minSdkVersion="8" />
     
     <uses-permission android:name="com.google.android.gm.permission.WRITE_GMAIL" />

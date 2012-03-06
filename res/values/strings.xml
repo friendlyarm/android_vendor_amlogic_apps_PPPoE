@@ -16,6 +16,7 @@
     <string name="pppoe_connect_failed">Connect failed!</string>
     <string name="pppoe_disconnect_ok">Disconnect OK!</string>
     <string name="pppoe_disconnect_failed">Disconnect failed!</string>
+    <string name="pppoe_ppp_interface_occupied">ppp interface occupied!</string>
     <string name="amlogic_ok">OK</string>
     <string name="pppoe_auto_dial">automatic dial</string>
 </resources>

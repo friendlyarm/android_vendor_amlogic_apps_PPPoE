@@ -16,6 +16,7 @@
     <string name="pppoe_connect_failed">寬帶撥號失败</string>
     <string name="pppoe_disconnect_ok">寬帶撥號断开成功</string>
     <string name="pppoe_disconnect_failed">寬帶撥號断开失败</string>
+    <string name="pppoe_ppp_interface_occupied">ppp接口被佔用</string>
     <string name="amlogic_ok">確定</string>
     <string name="pppoe_auto_dial">自动撥號</string>
 </resources>

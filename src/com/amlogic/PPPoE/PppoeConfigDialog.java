@@ -5,6 +5,7 @@ import java.util.TimerTask;
 import com.amlogic.PPPoE.R;
 import android.os.Message;
 import android.os.Handler;
+import android.os.SystemProperties;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
@@ -56,6 +57,60 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     private CheckBox mCbAutoDial;
 	Timer connect_timer = null;   
 	Timer disconnect_timer = null;   
+	private final String pppoe_running_flag = "net.pppoe.running";
+
+	private boolean is_pppoe_running()
+	{
+		String propVal = SystemProperties.get(pppoe_running_flag);
+		int n = 0;
+		if (propVal.length() != 0) {
+			try {
+				n = Integer.parseInt(propVal);
+			} catch (NumberFormatException e) {}
+		} else {
+			Log.d(TAG, "net.pppoe.running not FOUND");
+		}
+
+		return (n != 0); 
+	}
+
+
+
+	private void set_pppoe_running_flag()
+	{
+		SystemProperties.set(pppoe_running_flag, "100");
+		String propVal = SystemProperties.get(pppoe_running_flag);
+		int n = 0;
+		if (propVal.length() != 0) {
+			try {
+				n = Integer.parseInt(propVal);
+				Log.d(TAG, "set_pppoe_running_flag as " + n);
+			} catch (NumberFormatException e) {}
+		} else {
+			Log.d(TAG, "failed to set_pppoe_running_flag");
+		}
+
+		return;
+	}
+
+
+	private void clear_pppoe_running_flag()
+	{
+		SystemProperties.set(pppoe_running_flag, "0");
+		String propVal = SystemProperties.get(pppoe_running_flag);
+		int n = 0;
+		if (propVal.length() != 0) {
+			try {
+				n = Integer.parseInt(propVal);
+				Log.d(TAG, "clear_pppoe_running_flag as " + n);
+			} catch (NumberFormatException e) {}
+		} else {
+			Log.d(TAG, "failed to clear_pppoe_running_flag");
+		}
+
+		return;
+	}
+
 
 	public PppoeConfigDialog(Context context)
 	{
@@ -79,8 +134,10 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		mCbAutoDial.setVisibility(View.GONE);
 		this.setInverseBackgroundForced(true);
 		if(connectStatus() != PppoeOperation.PPP_STATUS_CONNECTED)
+		{
 			this.setButton(BUTTON_POSITIVE, context.getText(R.string.pppoe_dial), this);
-		else{
+		}
+		else {
 			//hide Username
 			mView.findViewById(R.id.user_pppoe_text).setVisibility(View.GONE);
 			mPppoeName.setVisibility(View.GONE);
@@ -89,6 +146,13 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 			mView.findViewById(R.id.passwd_pppoe_text).setVisibility(View.GONE);
 			mPppoePasswd.setVisibility(View.GONE);
 			this.setButton(BUTTON_POSITIVE, context.getText(R.string.pppoe_disconnect), this);
+
+			/*
+			if (!is_pppoe_running()) {
+				showAlertDialog(context.getResources().getString(R.string.pppoe_ppp_interface_occupied));
+				return;
+			}
+			*/
 		}
 		
         this.setButton(BUTTON_NEGATIVE, context.getText(R.string.menu_cancel), this);
@@ -259,18 +323,9 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 			connect_timer.schedule(check_task, 30000);
 			
 			showWaitDialog(R.string.pppoe_dial_waiting_msg);
+			set_pppoe_running_flag();
 			operation.connect(name, passwd);
 		}
-	}
-	
-	
-	private void waitOk(final int ms)
-	{
-		try {Thread.sleep(ms);
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
 	}
 	
 	private void handleStopDial()
@@ -283,6 +338,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                     case MSG_DISCONNECT_TIMEOUT:
 						waitDialog.cancel();
 						showAlertDialog(context.getResources().getString(R.string.pppoe_disconnect_ok));
+						clear_pppoe_running_flag();
 						break;
                     }
 					
