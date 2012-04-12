@@ -21,6 +21,18 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;  
+import android.widget.ArrayAdapter;  
+import android.widget.Spinner;  
+import android.widget.TextView;
+
+import android.net.ethernet.EthernetManager;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
+import java.util.ArrayList;
+import java.net.SocketException;
+
 import android.net.pppoe.PppoeManager;
 import android.net.pppoe.PppoeStateTracker;
 
@@ -38,7 +50,8 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 
 	private static final int MSG_CONNECT_TIMEOUT = 0xabcd0000;
 	private static final int MSG_DISCONNECT_TIMEOUT = 0xabcd0010;
-	
+	private static final int MSG_DISCONNECT_BEFORE_CONNECT_TIMEOUT = 0xabcd0020;
+    
     private static final String EXTRA_NAME_STATUS = "status";
     private static final String EXTRA_NAME_ERR_CODE = "err_code";
 	
@@ -55,10 +68,20 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     private PppoeReceiver pppoeReceiver = null;
     
     private CheckBox mCbAutoDial;
+
 	Timer connect_timer = null;   
 	Timer disconnect_timer = null;   
+	Timer disconnect_before_connect_timer = null;   
+
 	private final String pppoe_running_flag = "net.pppoe.running";
 
+	private TextView mNetworkInterfaces;
+	private Spinner spinner;
+	private ArrayAdapter<String> adapter;
+	private EthernetManager mEthManager;
+	private ArrayList<String> network_if_list;
+	private String network_if_selected;
+	private String tmp_name, tmp_passwd;
 	private boolean is_pppoe_running()
 	{
 		String propVal = SystemProperties.get(pppoe_running_flag);
@@ -121,9 +144,20 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		waitDialog = new ProgressDialog(this.context); 
 	}
 
+	class SpinnerSelectedListener implements OnItemSelectedListener{  
+	    public void onItemSelected(AdapterView<?> arg0, View arg1, int arg2,  
+                long arg3) {
+			network_if_selected = network_if_list.get(arg2);
+			Log.d(TAG, "interface selected: " + network_if_selected);
+		}  
+  
+		public void onNothingSelected(AdapterView<?> arg0) {  
+		}  
+	}
+
 	private void buildDialog(Context context)
 	{
-        Log.d(TAG, "buildDialog");
+		Log.d(TAG, "buildDialog");
 		setTitle(R.string.pppoe_config_title);
 		this.setView(mView = getLayoutInflater().inflate(R.layout.pppoe_configure, null));
 		mPppoeName = (EditText)mView.findViewById(R.id.pppoe_name_edit);
@@ -133,11 +167,63 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		mPppoePasswd.setEnabled(true);
 		mCbAutoDial.setVisibility(View.GONE);
 		this.setInverseBackgroundForced(true);
+
+		network_if_list=new ArrayList<String>();
+
+		try {
+			for(Enumeration<NetworkInterface> list = NetworkInterface.getNetworkInterfaces(); list.hasMoreElements();)
+			{
+				NetworkInterface netIf = list.nextElement();
+				//Log.d(TAG, "network_interface: " + netIf.getDisplayName());
+				if (!netIf.isLoopback() && !netIf.isPointToPoint())                
+					network_if_list.add(netIf.getDisplayName());                
+			}
+		} catch (SocketException e) {
+			return;
+		}
+
+		if (network_if_list.size() == 0 )
+			network_if_list.add("eth0");                
+
+		network_if_selected = network_if_list.get(0);
+
+        /*
+		boolean eth_found = false;
+		for(int i = 0; i < network_if_list.size(); i++) {
+			if (network_if_list.get(i).startsWith("eth"))
+				eth_found = true;
+		}
+
+		if (!eth_found) {
+				network_if_list.add("eth0");                
+		}
+        */
+        
+		/*
+		mEthManager = (EthernetManager) context.getSystemService(Context.ETH_SERVICE);
+		String[] network_if_list = mEthManager.getDeviceNameList();
+		*/
+
+		mNetworkInterfaces = (TextView) mView.findViewById(R.id.network_interface_list_text);
+		spinner = (Spinner) mView.findViewById(R.id.network_inteface_list_spinner); 
+		adapter = new ArrayAdapter<String>(getContext(),android.R.layout.simple_spinner_item,network_if_list);
+		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item); 
+		spinner.setAdapter(adapter);
+		spinner.setOnItemSelectedListener(new SpinnerSelectedListener());  
+		spinner.setVisibility(View.VISIBLE);
+
 		if(connectStatus() != PppoeOperation.PPP_STATUS_CONNECTED)
 		{
 			this.setButton(BUTTON_POSITIVE, context.getText(R.string.pppoe_dial), this);
 		}
 		else {
+			Log.d(TAG, "connectStatus is CONNECTED");
+
+			//hide network interfaces
+			mNetworkInterfaces.setVisibility(View.GONE);
+			spinner.setVisibility(View.GONE);
+
+
 			//hide Username
 			mView.findViewById(R.id.user_pppoe_text).setVisibility(View.GONE);
 			mPppoeName.setVisibility(View.GONE);
@@ -207,8 +293,10 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		sharedata.clear();
 		sharedata.putString("name", mPppoeName.getText().toString());
 		sharedata.putString("passwd", mPppoePasswd.getText().toString()); 
+		sharedata.putString("network_if_selected", network_if_selected); 
 		sharedata.commit();  
 	}
+
 	private void getInfoData()
 	{
 		SharedPreferences sharedata = this.context.getSharedPreferences("inputdata", 0);
@@ -216,6 +304,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		{
 			user_name = sharedata.getString("name", null);   
 			user_passwd = sharedata.getString("passwd", null); 
+			network_if_selected = sharedata.getString("network_if_selected", null); 
 		}
 		else
 		{
@@ -226,7 +315,12 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 	
 	private int connectStatus()
 	{
-		return operation.status();
+		if (null == network_if_selected){
+			Log.d(TAG, "network_if_selected is null");
+			return PppoeOperation.PPP_STATUS_DISCONNECTED;
+		}
+        
+		return operation.status(network_if_selected);
 	}
 	
 	private boolean isAutoDial() {
@@ -288,9 +382,9 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		filter.addAction(PppoeManager.PPPOE_STATE_CHANGED_ACTION);
 		context.registerReceiver(pppoeReceiver, filter);
 		
-		String name = mPppoeName.getText().toString();
-		String passwd = mPppoePasswd.getText().toString();
-		if(name != null && passwd != null)
+		tmp_name = mPppoeName.getText().toString();
+		tmp_passwd = mPppoePasswd.getText().toString();
+		if(tmp_name != null && tmp_passwd != null)
 		{
 			saveInfoData();
 			
@@ -301,8 +395,13 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 							waitDialog.cancel();
 							showAlertDialog(context.getResources().getString(R.string.pppoe_connect_failed));
 							break;
+
+	                    case MSG_DISCONNECT_BEFORE_CONNECT_TIMEOUT:
+							operation.connect(network_if_selected, tmp_name, tmp_passwd);
+							break;
+
 	                    }
-						
+
 	                    super.handleMessage(msg);
 	            }
 	        };
@@ -319,12 +418,24 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 			};
 
 
-			//Timeout after 30 seconds
-			connect_timer.schedule(check_task, 30000);
-			
+			disconnect_before_connect_timer = new Timer();   
+			TimerTask disconnect_before_connect_check_task = new TimerTask()
+			{   
+				public void run() 
+				{   
+					 Message message = new Message();
+	                 message.what = MSG_DISCONNECT_BEFORE_CONNECT_TIMEOUT;
+	                 handler.sendMessage(message);
+				}   
+			};
+
+			disconnect_before_connect_timer.schedule(disconnect_before_connect_check_task, 5000);
+
+			connect_timer.schedule(check_task, 35000);
+
 			showWaitDialog(R.string.pppoe_dial_waiting_msg);
 			set_pppoe_running_flag();
-			operation.connect(name, passwd);
+			operation.disconnect();
 		}
 	}
 	

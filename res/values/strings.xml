@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PPPoE</string>
-    
+    <string name="network_interface_list">Network interfaces:</string>    
     <string name="menu_cancel">Discard</string>
     <string name="pppoe_conf_perf_title">Pppoe Configure</string>
     <string name="pppoe_config_title">Configure Pppoe</string>
