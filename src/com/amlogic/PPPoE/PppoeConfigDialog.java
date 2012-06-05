@@ -2,7 +2,6 @@ package com.amlogic.PPPoE;
 
 import java.util.Timer;
 import java.util.TimerTask;
-import com.amlogic.PPPoE.R;
 import android.os.Message;
 import android.os.Handler;
 import android.os.SystemProperties;
@@ -19,6 +18,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton; 
 import android.widget.EditText;
 
 import android.widget.AdapterView;
@@ -162,10 +162,23 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 		this.setView(mView = getLayoutInflater().inflate(R.layout.pppoe_configure, null));
 		mPppoeName = (EditText)mView.findViewById(R.id.pppoe_name_edit);
 		mPppoePasswd = (EditText)mView.findViewById(R.id.pppoe_passwd_edit);
-		mCbAutoDial = (CheckBox)mView.findViewById(R.id.auto_dial);
+		mCbAutoDial = (CheckBox)mView.findViewById(R.id.auto_dial_checkbox);
+		mCbAutoDial.setVisibility(View.VISIBLE);
+        mCbAutoDial.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){ 
+                    @Override 
+                    public void onCheckedChanged(CompoundButton buttonView, 
+                            boolean isChecked) { 
+                        // TODO Auto-generated method stub 
+                        if(isChecked){ 
+                			Log.d(TAG, "Selected");
+                        }else{ 
+                			Log.d(TAG, "NO Selected");
+                        } 
+                    } 
+                }); 
+
 		mPppoeName.setEnabled(true);
 		mPppoePasswd.setEnabled(true);
-		mCbAutoDial.setVisibility(View.GONE);
 		this.setInverseBackgroundForced(true);
 
 		network_if_list=new ArrayList<String>();
