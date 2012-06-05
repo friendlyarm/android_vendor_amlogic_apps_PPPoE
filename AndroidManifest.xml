@@ -61,5 +61,11 @@
             </intent-filter>
         </activity>
 
+	<receiver android:name=".PppoeBroadcastReceiver">
+		<intent-filter>
+			<action android:name="android.net.ethernet.ETH_STATE_CHANGED"/>
+		</intent-filter>
+	</receiver>
+				
     </application>
 </manifest>
