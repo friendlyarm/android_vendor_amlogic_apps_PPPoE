@@ -238,6 +238,10 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
         else {
             Log.d(TAG, "connectStatus is CONNECTED");
 
+            //hide AutoDial CheckBox
+            mCbAutoDial.setVisibility(View.GONE);
+
+
             //hide network interfaces
             mNetworkInterfaces.setVisibility(View.GONE);
             spinner.setVisibility(View.GONE);
