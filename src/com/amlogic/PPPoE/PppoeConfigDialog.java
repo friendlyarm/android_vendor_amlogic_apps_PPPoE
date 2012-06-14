@@ -194,7 +194,10 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
             {
                 NetworkInterface netIf = list.nextElement();
                 //Log.d(TAG, "network_interface: " + netIf.getDisplayName());
-                if (!netIf.isLoopback() && !netIf.isPointToPoint())                
+                if (netIf.isUp() && 
+                    !netIf.isLoopback() && 
+                    !netIf.isPointToPoint() && 
+                    !netIf.getDisplayName().startsWith("sit"))                
                     network_if_list.add(netIf.getDisplayName());                
             }
         } catch (SocketException e) {
