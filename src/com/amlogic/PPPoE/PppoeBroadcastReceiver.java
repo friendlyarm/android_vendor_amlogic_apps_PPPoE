@@ -14,6 +14,7 @@ import com.amlogic.pppoe.PppoeOperation;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.SystemProperties;
 
 public class PppoeBroadcastReceiver extends BroadcastReceiver {
     private static final String TAG = "PppoeBroadcastReceiver";
@@ -98,6 +99,7 @@ public class PppoeBroadcastReceiver extends BroadcastReceiver {
             else if (event == EthernetStateTracker.EVENT_HW_PHYCONNECTED ) {
                 Log.d(TAG , "EVENT_HW_PHYCONNECTED");
                 operation = new PppoeOperation();
+                set_pppoe_running_flag();
                 operation.disconnect();
 
                 mHandler = new PppoeHandler();
@@ -117,6 +119,7 @@ public class PppoeBroadcastReceiver extends BroadcastReceiver {
                     return;
 
                 operation = new PppoeOperation();
+                set_pppoe_running_flag();
                 operation.disconnect();
 
                 mHandler = new PppoeHandler();
@@ -125,6 +128,22 @@ public class PppoeBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
+    void set_pppoe_running_flag()
+    {
+        SystemProperties.set(PppoeConfigDialog.pppoe_running_flag, "100");
+        String propVal = SystemProperties.get(PppoeConfigDialog.pppoe_running_flag);
+        int n = 0;
+        if (propVal.length() != 0) {
+            try {
+                n = Integer.parseInt(propVal);
+                Log.d(TAG, "set_pppoe_running_flag as " + n);
+            } catch (NumberFormatException e) {}
+        } else {
+            Log.d(TAG, "failed to set_pppoe_running_flag");
+        }
+
+        return;
+    }
 
     private class PppoeHandler extends Handler
     {

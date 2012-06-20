@@ -78,7 +78,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     Timer disconnect_timer = null;   
     Timer disconnect_before_connect_timer = null;   
 
-    private final String pppoe_running_flag = "net.pppoe.running";
+    public static final String pppoe_running_flag = "net.pppoe.running";
 
     private TextView mNetworkInterfaces;
     private Spinner spinner;

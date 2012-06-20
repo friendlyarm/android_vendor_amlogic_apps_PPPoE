@@ -32,8 +32,6 @@ public class PPPoEActivity extends Activity {
            Log.d(TAG, info.toString());
         }
 
-        
-
         mPppoeManager = (PppoeManager) this.getSystemService(Context.PPPOE_SERVICE);
 
         mPppoeInfo = mPppoeManager.getSavedPppoeConfig();
