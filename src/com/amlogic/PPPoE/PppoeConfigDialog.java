@@ -148,6 +148,11 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
         operation = new PppoeOperation();
         buildDialog(context);
         waitDialog = new ProgressDialog(this.context); 
+
+        pppoeReceiver = new PppoeReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(PppoeManager.PPPOE_STATE_CHANGED_ACTION);
+        context.registerReceiver(pppoeReceiver, filter);
     }
 
     class SpinnerSelectedListener implements OnItemSelectedListener{  
@@ -244,11 +249,9 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
             //hide AutoDial CheckBox
             mCbAutoDial.setVisibility(View.GONE);
 
-
             //hide network interfaces
             mNetworkInterfaces.setVisibility(View.GONE);
             spinner.setVisibility(View.GONE);
-
 
             //hide Username
             mView.findViewById(R.id.user_pppoe_text).setVisibility(View.GONE);
@@ -257,6 +260,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
             //hide Password
             mView.findViewById(R.id.passwd_pppoe_text).setVisibility(View.GONE);
             mPppoePasswd.setVisibility(View.GONE);
+
             this.setButton(BUTTON_POSITIVE, context.getText(R.string.pppoe_disconnect), this);
 
             /*
@@ -377,6 +381,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
             case android.content.DialogInterface.BUTTON_POSITIVE:
                 {
                     alertDia.cancel();
+                    Log.d(TAG, "User click OK button, exit APK");
                     clearSelf();
                 }
                 break;
@@ -391,11 +396,6 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     
     private void handleStartDial()
     {
-        pppoeReceiver = new PppoeReceiver();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(PppoeManager.PPPOE_STATE_CHANGED_ACTION);
-        context.registerReceiver(pppoeReceiver, filter);
-        
         tmp_name = mPppoeName.getText().toString();
         tmp_passwd = mPppoePasswd.getText().toString();
         if(tmp_name != null && tmp_passwd != null)
@@ -456,7 +456,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     private void handleStopDial()
     {
         boolean result = operation.disconnect();
-        
+
         final Handler handler = new Handler() {
             public void handleMessage(Message msg) {
                 switch (msg.what) {
@@ -511,6 +511,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
         }
     };
 
+
     //@Override
     public void onClick(DialogInterface dialog, int which) 
     {
@@ -522,6 +523,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                 handleStartDial();
             break;
         case BUTTON_NEGATIVE:
+            Log.d(TAG, "User click Discard button, exit APK");
             clearSelf();
             break;
         default:
@@ -567,9 +569,12 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if(keyCode == KeyEvent.KEYCODE_BACK){
+            Log.d(TAG, "User BACK operation, exit APK");
             clearSelf();
             return true;
         }
+
+        Log.d(TAG, "keyCode " + keyCode + " is down, do nothing");
         return super.onKeyDown(keyCode, event);
     }
     
