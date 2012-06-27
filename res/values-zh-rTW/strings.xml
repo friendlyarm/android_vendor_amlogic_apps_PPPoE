@@ -14,6 +14,8 @@
     <string name="pppoe_conf_summary">寬帶撥號配置</string>
     <string name="pppoe_connect_ok">寬帶撥號成功</string>
     <string name="pppoe_connect_failed">寬帶撥號失败</string>
+    <string name="pppoe_connect_failed_server_no_response">服務器未響應</string>
+    <string name="pppoe_connect_failed_auth">無效的用戶名或密碼</string>    
     <string name="pppoe_disconnect_ok">寬帶撥號断开成功</string>
     <string name="pppoe_disconnect_failed">寬帶撥號断开失败</string>
     <string name="pppoe_ppp_interface_occupied">ppp接口被佔用</string>

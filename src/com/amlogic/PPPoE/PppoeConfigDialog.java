@@ -450,7 +450,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 
             disconnect_before_connect_timer.schedule(disconnect_before_connect_check_task, 5000);
 
-            connect_timer.schedule(check_task, 35000);
+            connect_timer.schedule(check_task, 60000 * 3);
 
             showWaitDialog(R.string.pppoe_dial_waiting_msg);
             set_pppoe_running_flag();
@@ -468,7 +468,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                 switch (msg.what) {
                 case MSG_DISCONNECT_TIMEOUT:
                     waitDialog.cancel();
-                    showAlertDialog(context.getResources().getString(R.string.pppoe_disconnect_ok));
+                    showAlertDialog(context.getResources().getString(R.string.pppoe_disconnect_failed));
                     clear_pppoe_running_flag();
                     break;
                 }
@@ -491,7 +491,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
         };
 
         //Timeout after 5 seconds
-        disconnect_timer.schedule(check_task, 5000);
+        disconnect_timer.schedule(check_task, 50000);
         
         showWaitDialog(R.string.pppoe_hangup_waiting_msg);
     }
@@ -559,8 +559,26 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 
                 if(event == PppoeStateTracker.EVENT_DISCONNECTED)
                 {
-                    //waitDialog.cancel();
-                    //showAlertDialog(context.getResources().getString(R.string.pppoe_connect_failed));
+                    waitDialog.cancel();
+                    disconnect_timer.cancel();
+                    showAlertDialog(context.getResources().getString(R.string.pppoe_disconnect_ok));
+                    clear_pppoe_running_flag();
+                }
+
+                if(event == PppoeStateTracker.EVENT_CONNECT_FAILED)
+                {
+                    String ppp_err = intent.getStringExtra(PppoeManager.EXTRA_PPPOE_ERRCODE);
+                    Log.d(TAG, "#####errcode: " + ppp_err);
+                    waitDialog.cancel();
+                    connect_timer.cancel();
+
+                    String reason = "";
+                    if (ppp_err.equals("10:1"))
+                        reason = context.getResources().getString(R.string.pppoe_connect_failed_auth);
+                    else if (ppp_err.equals("10:2"))
+                        reason = context.getResources().getString(R.string.pppoe_connect_failed_server_no_response);
+
+                    showAlertDialog(context.getResources().getString(R.string.pppoe_connect_failed) + "\n" + reason);
                 }
 
             }

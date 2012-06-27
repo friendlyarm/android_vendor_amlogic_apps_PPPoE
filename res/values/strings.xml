@@ -13,7 +13,9 @@
     <string name="pppoe_hangup_waiting_msg">Please wait for hangup...</string>
     <string name="pppoe_conf_summary">Configure dial</string>
     <string name="pppoe_connect_ok">Connect Ok!</string>
-    <string name="pppoe_connect_failed">Connect failed!</string>
+    <string name="pppoe_connect_failed">Connect failed</string>
+    <string name="pppoe_connect_failed_server_no_response">NO Response</string>
+    <string name="pppoe_connect_failed_auth">Invalid username or password</string>    
     <string name="pppoe_disconnect_ok">Disconnect OK!</string>
     <string name="pppoe_disconnect_failed">Disconnect failed!</string>
     <string name="pppoe_ppp_interface_occupied">ppp interface occupied!</string>
