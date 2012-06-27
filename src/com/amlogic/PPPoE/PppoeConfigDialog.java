@@ -152,6 +152,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
         pppoeReceiver = new PppoeReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction(PppoeManager.PPPOE_STATE_CHANGED_ACTION);
+        Log.d(TAG, "registerReceiver pppoeReceiver");
         context.registerReceiver(pppoeReceiver, filter);
     }
 
@@ -396,6 +397,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     
     private void handleStartDial()
     {
+        Log.d(TAG, "handleStartDial");
         tmp_name = mPppoeName.getText().toString();
         tmp_passwd = mPppoePasswd.getText().toString();
         if(tmp_name != null && tmp_passwd != null)
@@ -416,6 +418,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 
                     }
 
+                    Log.d(TAG, "handleStartDial.handler");
                     super.handleMessage(msg);
                 }
             };
@@ -425,9 +428,10 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
             {   
                 public void run() 
                 {   
-                     Message message = new Message();
-                     message.what = MSG_CONNECT_TIMEOUT;
-                     handler.sendMessage(message);
+                    Message message = new Message();
+                    Log.d(TAG, "Send MSG_CONNECT_TIMEOUT");                     
+                    message.what = MSG_CONNECT_TIMEOUT;
+                    handler.sendMessage(message);
                 }   
             };
 
@@ -437,9 +441,10 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
             {   
                 public void run() 
                 {   
-                     Message message = new Message();
-                     message.what = MSG_DISCONNECT_BEFORE_CONNECT_TIMEOUT;
-                     handler.sendMessage(message);
+                    Message message = new Message();
+                    message.what = MSG_DISCONNECT_BEFORE_CONNECT_TIMEOUT;
+                    Log.d(TAG, "Send MSG_DISCONNECT_BEFORE_CONNECT_TIMEOUT");                     
+                    handler.sendMessage(message);
                 }   
             };
 
@@ -455,6 +460,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     
     private void handleStopDial()
     {
+        Log.d(TAG, "handleStopDial");
         boolean result = operation.disconnect();
 
         final Handler handler = new Handler() {
@@ -467,6 +473,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                     break;
                 }
                 
+                Log.d(TAG, "handleStopDial.handler");
                 super.handleMessage(msg);
             }
         };
@@ -476,9 +483,10 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
         {   
             public void run() 
             {   
-                 Message message = new Message();
-                 message.what = MSG_DISCONNECT_TIMEOUT;
-                 handler.sendMessage(message);
+                Message message = new Message();
+                message.what = MSG_DISCONNECT_TIMEOUT;
+                Log.d(TAG, "Send MSG_DISCONNECT_TIMEOUT");                     
+                handler.sendMessage(message);
             }   
         };
 
@@ -561,9 +569,17 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     
     private void clearSelf()
     {
-        if(pppoeReceiver != null)
+        if(pppoeReceiver != null) {
+            Log.d(TAG, "unregisterReceiver pppoeReceiver");
             context.unregisterReceiver(pppoeReceiver);
+        }
         ((PPPoEActivity)context).finish();
+
+        /*
+        Log.d(TAG, "killProcess");
+        android.os.Process.killProcess(android.os.Process.myPid());
+        System.exit(0);    
+        */
     }
 
     @Override
