@@ -50,7 +50,6 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 
     private static final int MSG_CONNECT_TIMEOUT = 0xabcd0000;
     private static final int MSG_DISCONNECT_TIMEOUT = 0xabcd0010;
-    private static final int MSG_DISCONNECT_BEFORE_CONNECT_TIMEOUT = 0xabcd0020;
     
     private static final String EXTRA_NAME_STATUS = "status";
     private static final String EXTRA_NAME_ERR_CODE = "err_code";
@@ -417,11 +416,6 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                             waitDialog.cancel();
                             showAlertDialog(context.getResources().getString(R.string.pppoe_connect_failed));
                             break;
-
-                        case MSG_DISCONNECT_BEFORE_CONNECT_TIMEOUT:
-                            operation.connect(mNetIfSelected, tmp_name, tmp_passwd);
-                            break;
-
                     }
 
                     Log.d(TAG, "handleStartDial.handler");
@@ -441,26 +435,11 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                 }   
             };
 
-
-            disconnect_before_connect_timer = new Timer();   
-            TimerTask disconnect_before_connect_check_task = new TimerTask()
-            {   
-                public void run() 
-                {   
-                    Message message = new Message();
-                    message.what = MSG_DISCONNECT_BEFORE_CONNECT_TIMEOUT;
-                    Log.d(TAG, "Send MSG_DISCONNECT_BEFORE_CONNECT_TIMEOUT");                     
-                    handler.sendMessage(message);
-                }   
-            };
-
-            disconnect_before_connect_timer.schedule(disconnect_before_connect_check_task, 5000);
-
-            connect_timer.schedule(check_task, 60000 * 3);
+            connect_timer.schedule(check_task, 60000 * 2);
 
             showWaitDialog(R.string.pppoe_dial_waiting_msg);
             set_pppoe_running_flag();
-            operation.disconnect();
+            operation.connect(mNetIfSelected, tmp_name, tmp_passwd);
         }
     }
     
@@ -496,7 +475,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
             }   
         };
 
-        //Timeout after 5 seconds
+        //Timeout after 50 seconds
         disconnect_timer.schedule(check_task, 50000);
         
         showWaitDialog(R.string.pppoe_hangup_waiting_msg);
