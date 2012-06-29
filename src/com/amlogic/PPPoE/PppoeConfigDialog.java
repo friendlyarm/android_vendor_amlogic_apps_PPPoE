@@ -43,10 +43,12 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     private static final String PPPOE_DIAL_RESULT_ACTION =
             "PppoeConfigDialog.PPPOE_DIAL_RESULT";
 
+    private static final int PPPOE_STATE_UNDEFINED = 0;
     private static final int PPPOE_STATE_DISCONNECTED = 1;
-    private static final int PPPOE_STATE_CONNETCING = 2;
+    private static final int PPPOE_STATE_CONNECTING = 2;
+    private static final int PPPOE_STATE_DISCONNECTING = 3;
     private static final int PPPOE_STATE_CONNECT_FAILED = 4;
-    private static final int PPPOE_STATE_CONNECTED = 8;
+    private static final int PPPOE_STATE_CONNECTED = 5;
 
     private static final int MSG_CONNECT_TIMEOUT = 0xabcd0000;
     private static final int MSG_DISCONNECT_TIMEOUT = 0xabcd0010;
@@ -74,8 +76,9 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     private CheckBox mCbAutoDial;
 
     Timer connect_timer = null;   
-    Timer disconnect_timer = null;   
-    Timer disconnect_before_connect_timer = null;   
+    Timer disconnect_timer = null; 
+
+    private int pppoe_state = PPPOE_STATE_UNDEFINED;
 
     public static final String pppoe_running_flag = "net.pppoe.running";
 
@@ -306,7 +309,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
         waitDialog.setTitle(""); 
         waitDialog.setMessage(this.context.getResources().getString(id));
         waitDialog.setIcon(null); 
-        waitDialog.setButton(android.content.DialogInterface.BUTTON_POSITIVE,this.context.getResources().getString(R.string.menu_cancel),clickListener); 
+        waitDialog.setButton(android.content.DialogInterface.BUTTON_POSITIVE,this.context.getResources().getString(R.string.menu_cancel),cancelBtnClickListener); 
         waitDialog.setIndeterminate(false); 
         waitDialog.setCancelable(true); 
         waitDialog.show();
@@ -413,6 +416,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                 public void handleMessage(Message msg) {
                     switch (msg.what) {
                         case MSG_CONNECT_TIMEOUT:
+                            pppoe_state = PPPOE_STATE_CONNECT_FAILED;
                             waitDialog.cancel();
                             showAlertDialog(context.getResources().getString(R.string.pppoe_connect_failed));
                             break;
@@ -438,6 +442,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
             connect_timer.schedule(check_task, 60000 * 2);
 
             showWaitDialog(R.string.pppoe_dial_waiting_msg);
+            pppoe_state = PPPOE_STATE_CONNECTING;
             set_pppoe_running_flag();
             operation.connect(mNetIfSelected, tmp_name, tmp_passwd);
         }
@@ -446,6 +451,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     private void handleStopDial()
     {
         Log.d(TAG, "handleStopDial");
+        pppoe_state = PPPOE_STATE_DISCONNECTING;
         boolean result = operation.disconnect();
 
         final Handler handler = new Handler() {
@@ -454,6 +460,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                 case MSG_DISCONNECT_TIMEOUT:
                     waitDialog.cancel();
                     showAlertDialog(context.getResources().getString(R.string.pppoe_disconnect_failed));
+                    pppoe_state = PPPOE_STATE_DISCONNECTED;
                     clear_pppoe_running_flag();
                     break;
                 }
@@ -488,13 +495,11 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     }
     
 
-    OnClickListener clickListener = new OnClickListener()
+    OnClickListener cancelBtnClickListener = new OnClickListener()
     {
         public void onClick(DialogInterface dialog, int which) 
         {
-            //If do not cancel the timer, then discard when disconnecting
-            //will cause APK crash
-            Log.d(TAG, "#####################################");
+            Log.d(TAG, "Cancel button is clicked");
             if (disconnect_timer != null)
                 disconnect_timer.cancel();
             
@@ -537,15 +542,21 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                 Log.d(TAG, "#####event " + event);
                 if(event == PppoeStateTracker.EVENT_CONNECTED)
                 {
-                    waitDialog.cancel();
-                    connect_timer.cancel();
+                    if (pppoe_state == PPPOE_STATE_CONNECTING) {
+                        waitDialog.cancel();
+                        connect_timer.cancel();
+                    }
+                    pppoe_state = PPPOE_STATE_CONNECTED;
                     showAlertDialog(context.getResources().getString(R.string.pppoe_connect_ok));
                 }
 
                 if(event == PppoeStateTracker.EVENT_DISCONNECTED)
                 {
-                    waitDialog.cancel();
-                    disconnect_timer.cancel();
+                    if (pppoe_state == PPPOE_STATE_DISCONNECTING) {
+                        waitDialog.cancel();
+                        disconnect_timer.cancel();
+                    }
+                    pppoe_state = PPPOE_STATE_DISCONNECTED;
                     showAlertDialog(context.getResources().getString(R.string.pppoe_disconnect_ok));
                     clear_pppoe_running_flag();
                 }
@@ -554,9 +565,13 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                 {
                     String ppp_err = intent.getStringExtra(PppoeManager.EXTRA_PPPOE_ERRCODE);
                     Log.d(TAG, "#####errcode: " + ppp_err);
-                    waitDialog.cancel();
-                    connect_timer.cancel();
 
+                    if (pppoe_state == PPPOE_STATE_CONNECTING) {
+                        waitDialog.cancel();
+                        connect_timer.cancel();
+                    }
+
+                    pppoe_state = PPPOE_STATE_CONNECT_FAILED;
                     String reason = "";
                     if (ppp_err.equals("10:1"))
                         reason = context.getResources().getString(R.string.pppoe_connect_failed_auth);
