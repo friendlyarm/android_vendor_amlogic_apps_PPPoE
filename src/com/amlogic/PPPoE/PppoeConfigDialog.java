@@ -307,10 +307,16 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
         waitDialog.setTitle(""); 
         waitDialog.setMessage(this.context.getResources().getString(id));
         waitDialog.setIcon(null); 
-
+        waitDialog.setButton(android.content.DialogInterface.BUTTON_POSITIVE,this.context.getResources().getString(R.string.menu_cancel),clickListener); 
         waitDialog.setIndeterminate(false); 
-        waitDialog.setCancelable(false); 
+        waitDialog.setCancelable(true); 
         waitDialog.show();
+          
+        Button button = waitDialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE);
+        button.setFocusable(true);
+        button.setFocusableInTouchMode(true);
+        button.requestFocus();
+        button.requestFocusFromTouch();
     }
 
     private void saveInfoData()
