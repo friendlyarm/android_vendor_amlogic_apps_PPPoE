@@ -309,7 +309,11 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
         waitDialog.setTitle(""); 
         waitDialog.setMessage(this.context.getResources().getString(id));
         waitDialog.setIcon(null); 
-        waitDialog.setButton(android.content.DialogInterface.BUTTON_POSITIVE,this.context.getResources().getString(R.string.menu_cancel),cancelBtnClickListener); 
+
+        if (id == R.string.pppoe_dial_waiting_msg){ 
+            waitDialog.setButton(android.content.DialogInterface.BUTTON_POSITIVE,this.context.getResources().getString(R.string.menu_cancel),cancelBtnClickListener); 
+        }
+        
         waitDialog.setIndeterminate(false); 
         waitDialog.setCancelable(true); 
         waitDialog.show();
