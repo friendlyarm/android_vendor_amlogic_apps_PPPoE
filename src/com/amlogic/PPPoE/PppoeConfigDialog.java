@@ -559,10 +559,10 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                     if (pppoe_state == PPPOE_STATE_DISCONNECTING) {
                         waitDialog.cancel();
                         disconnect_timer.cancel();
+                        clear_pppoe_running_flag();
                     }
                     pppoe_state = PPPOE_STATE_DISCONNECTED;
                     showAlertDialog(context.getResources().getString(R.string.pppoe_disconnect_ok));
-                    clear_pppoe_running_flag();
                 }
 
                 if(event == PppoeStateTracker.EVENT_CONNECT_FAILED)
@@ -573,6 +573,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                     if (pppoe_state == PPPOE_STATE_CONNECTING) {
                         waitDialog.cancel();
                         connect_timer.cancel();
+                        clear_pppoe_running_flag();
                     }
 
                     pppoe_state = PPPOE_STATE_CONNECT_FAILED;
@@ -584,7 +585,6 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 
                     showAlertDialog(context.getResources().getString(R.string.pppoe_connect_failed) + "\n" + reason);
                 }
-
             }
         }
     }
