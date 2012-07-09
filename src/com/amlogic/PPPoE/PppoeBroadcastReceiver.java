@@ -18,6 +18,8 @@ import android.os.SystemProperties;
 
 public class PppoeBroadcastReceiver extends BroadcastReceiver {
     private static final String TAG = "PppoeBroadcastReceiver";
+    private static final String ACTION_BOOT_COMPLETED =
+        "android.intent.action.BOOT_COMPLETED";
 
     private Handler mHandler;
     private boolean mAutoDialFlag = false;
@@ -82,6 +84,11 @@ public class PppoeBroadcastReceiver extends BroadcastReceiver {
         mPassword = getPassword(context);
         Log.d(TAG , "Password = " + mPassword);
         
+		if (ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
+			context.startService(new Intent(context, 
+					MyPppoeService.class));				
+		}
+
         if (null == mInterfaceSelected
             || !mAutoDialFlag
             || null == mUserName
