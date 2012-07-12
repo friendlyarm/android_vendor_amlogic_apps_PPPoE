@@ -578,9 +578,9 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 
                     pppoe_state = PPPOE_STATE_CONNECT_FAILED;
                     String reason = "";
-                    if (ppp_err.equals("10:1"))
+                    if (ppp_err.equals("691"))
                         reason = context.getResources().getString(R.string.pppoe_connect_failed_auth);
-                    else if (ppp_err.equals("10:2"))
+                    else if (ppp_err.equals("650"))
                         reason = context.getResources().getString(R.string.pppoe_connect_failed_server_no_response);
 
                     showAlertDialog(context.getResources().getString(R.string.pppoe_connect_failed) + "\n" + reason);
