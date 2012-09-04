@@ -73,16 +73,11 @@ public class PppoeBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
-        Log.d(TAG , ">>>>>onReceive :" +intent.getAction());
         mInterfaceSelected = getNetworkInterfaceSelected(context);
-        Log.d(TAG , "InterfaceSelected = " + mInterfaceSelected);
         mAutoDialFlag = getAutoDialFlag(context);
-        Log.d(TAG , "AutoDialFlag = " + mAutoDialFlag);
 
         mUserName = getUserName(context);
-        Log.d(TAG , "UserName = " + mUserName);
         mPassword = getPassword(context);
-        Log.d(TAG , "Password = " + mPassword);
         
 		if (ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
 			context.startService(new Intent(context, 
@@ -95,27 +90,32 @@ public class PppoeBroadcastReceiver extends BroadcastReceiver {
             || null == mPassword)
             return;
         
+
         if (EthernetManager.ETH_STATE_CHANGED_ACTION.equals(action)) {
             if (!mInterfaceSelected.startsWith("eth"))
                 return;
 
+            Log.d(TAG , ">>>>>onReceive :" +intent.getAction());
             int event = intent.getIntExtra(EthernetManager.EXTRA_ETH_STATE, -1);
             if (event == EthernetStateTracker.EVENT_HW_DISCONNECTED ) {
-                Log.d(TAG , "EVENT_HW_DISCONNECTED");
+                Log.d(TAG, "EVENT_HW_DISCONNECTED");
             }
             else if (event == EthernetStateTracker.EVENT_HW_PHYCONNECTED ) {
-                Log.d(TAG , "EVENT_HW_PHYCONNECTED");
+                Log.d(TAG, "EVENT_HW_PHYCONNECTED");
+                Log.d(TAG , "InterfaceSelected = " + mInterfaceSelected);
+                Log.d(TAG , "UserName = " + mUserName);
+                Log.d(TAG , "Password = " + mPassword);
                 operation = new PppoeOperation();
                 set_pppoe_running_flag();
-                operation.disconnect();
+                operation.terminate();
 
                 mHandler = new PppoeHandler();
                 mHandler.sendEmptyMessageDelayed(0, 5000);
             }
             else if (event == EthernetStateTracker.EVENT_HW_CONNECTED )
-                Log.d(TAG , "EVENT_HW_CONNECTED");
+                Log.d(TAG, "EVENT_HW_CONNECTED");
             else
-                Log.d(TAG , "EVENT=" + event);
+                Log.d(TAG, "EVENT=" + event);
         }
 
         if ((ConnectivityManager.CONNECTIVITY_ACTION).equals(action)) {
