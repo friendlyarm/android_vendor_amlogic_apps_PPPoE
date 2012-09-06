@@ -103,8 +103,6 @@ public class PppoeBroadcastReceiver extends BroadcastReceiver {
             else if (event == EthernetStateTracker.EVENT_HW_PHYCONNECTED ) {
                 Log.d(TAG, "EVENT_HW_PHYCONNECTED");
                 Log.d(TAG , "InterfaceSelected = " + mInterfaceSelected);
-                Log.d(TAG , "UserName = " + mUserName);
-                Log.d(TAG , "Password = " + mPassword);
                 operation = new PppoeOperation();
                 set_pppoe_running_flag();
                 operation.terminate();
