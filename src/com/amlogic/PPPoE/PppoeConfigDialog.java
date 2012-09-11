@@ -423,6 +423,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                             pppoe_state = PPPOE_STATE_CONNECT_FAILED;
                             waitDialog.cancel();
                             showAlertDialog(context.getResources().getString(R.string.pppoe_connect_failed));
+							SystemProperties.set("net.pppoe.isConnected", "false");
                             break;
                     }
 
@@ -466,6 +467,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                     showAlertDialog(context.getResources().getString(R.string.pppoe_disconnect_failed));
                     pppoe_state = PPPOE_STATE_DISCONNECTED;
                     clear_pppoe_running_flag();
+					SystemProperties.set("net.pppoe.isConnected", "false");
                     break;
                 }
                 
@@ -552,6 +554,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                     }
                     pppoe_state = PPPOE_STATE_CONNECTED;
                     showAlertDialog(context.getResources().getString(R.string.pppoe_connect_ok));
+					SystemProperties.set("net.pppoe.isConnected", "true");
                 }
 
                 if(event == PppoeStateTracker.EVENT_DISCONNECTED)
@@ -563,6 +566,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                     }
                     pppoe_state = PPPOE_STATE_DISCONNECTED;
                     showAlertDialog(context.getResources().getString(R.string.pppoe_disconnect_ok));
+					SystemProperties.set("net.pppoe.isConnected", "false");
                 }
 
                 if(event == PppoeStateTracker.EVENT_CONNECT_FAILED)
@@ -584,6 +588,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                         reason = context.getResources().getString(R.string.pppoe_connect_failed_server_no_response);
 
                     showAlertDialog(context.getResources().getString(R.string.pppoe_connect_failed) + "\n" + reason);
+					SystemProperties.set("net.pppoe.isConnected", "false");
                 }
             }
         }
