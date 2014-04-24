@@ -135,6 +135,8 @@ public class PppoeBroadcastReceiver extends BroadcastReceiver {
 
     void set_pppoe_running_flag()
     {
+        SystemProperties.set(PppoeConfigDialog.ethernet_dhcp_repeat_flag, "disabled");
+
         SystemProperties.set(PppoeConfigDialog.pppoe_running_flag, "100");
         String propVal = SystemProperties.get(PppoeConfigDialog.pppoe_running_flag);
         int n = 0;

@@ -79,8 +79,9 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     Timer disconnect_timer = null; 
 
     private int pppoe_state = PPPOE_STATE_UNDEFINED;
-
+    private boolean isDialogOfDisconnect = false;
     public static final String pppoe_running_flag = "net.pppoe.running";
+    public static final String ethernet_dhcp_repeat_flag = "net.dhcp.repeat";
 
     private TextView mNetworkInterfaces;
     private Spinner spinner;
@@ -109,6 +110,8 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 
     private void set_pppoe_running_flag()
     {
+        SystemProperties.set(ethernet_dhcp_repeat_flag, "disabled");
+
         SystemProperties.set(pppoe_running_flag, "100");
         String propVal = SystemProperties.get(pppoe_running_flag);
         int n = 0;
@@ -127,6 +130,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 
     private void clear_pppoe_running_flag()
     {
+        SystemProperties.set(ethernet_dhcp_repeat_flag, "enabled");
         SystemProperties.set(pppoe_running_flag, "0");
         String propVal = SystemProperties.get(pppoe_running_flag);
         int n = 0;
@@ -244,10 +248,12 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 
         if(connectStatus() != PppoeOperation.PPP_STATUS_CONNECTED)
         {
+            isDialogOfDisconnect = false;
             this.setButton(BUTTON_POSITIVE, context.getText(R.string.pppoe_dial), this);
         }
         else {
             Log.d(TAG, "connectStatus is CONNECTED");
+            isDialogOfDisconnect = true;
 
             //hide AutoDial CheckBox
             mCbAutoDial.setVisibility(View.GONE);
@@ -521,8 +527,16 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     {
         switch (which) {
         case BUTTON_POSITIVE:
-            if(connectStatus() == PppoeOperation.PPP_STATUS_CONNECTED)
+            if(isDialogOfDisconnect) {
+                if (connectStatus() != PppoeOperation.PPP_STATUS_CONNECTED) {
+                    Log.d(TAG, "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+                    Log.d(TAG, "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+                    Log.d(TAG, "@@DANGER: SHOULD CONNECTED when in DialogOfDisconnect@@");
+                    Log.d(TAG, "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+                    Log.d(TAG, "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+                }
                 handleStopDial();
+            }
             else
                 handleStartDial();
             break;
@@ -562,8 +576,8 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                     if (pppoe_state == PPPOE_STATE_DISCONNECTING) {
                         waitDialog.cancel();
                         disconnect_timer.cancel();
-                        clear_pppoe_running_flag();
                     }
+                    clear_pppoe_running_flag();
                     pppoe_state = PPPOE_STATE_DISCONNECTED;
                     showAlertDialog(context.getResources().getString(R.string.pppoe_disconnect_ok));
 					SystemProperties.set("net.pppoe.isConnected", "false");
