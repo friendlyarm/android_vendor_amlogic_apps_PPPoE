@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="com.amlogic.PPPoE"
+      package="com.droidlogic.PPPoE"
       android:versionCode="1"
       android:versionName="1.0"
       android:sharedUserId="android.uid.system">
@@ -65,7 +65,7 @@
 		<intent-filter>
 		        <action android:name="android.intent.action.BOOT_COMPLETED"/>
 			<action android:name="android.net.ethernet.ETH_STATE_CHANGED"/>
-            		<action android:name="android.net.conn.CONNECTIVITY_CHANGE"/>
+			<action android:name="android.net.wifi.STATE_CHANGE"/>
 		</intent-filter>
 	</receiver>
 				

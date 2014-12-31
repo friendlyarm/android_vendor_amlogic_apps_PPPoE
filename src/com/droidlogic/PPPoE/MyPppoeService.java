@@ -1,4 +1,4 @@
-package com.amlogic.PPPoE;
+package com.droidlogic.PPPoE;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -23,8 +23,8 @@ public class MyPppoeService extends Service
     private NotificationManager mNM;
     private Handler mHandler;
     private PppoeOperation operation = null;
-    
-    
+
+
     @Override
     public void onCreate() {
         Log.d(TAG, ">>>>>>onCreate");
@@ -38,8 +38,8 @@ public class MyPppoeService extends Service
 
         IntentFilter f = new IntentFilter();
 
-        f.addAction(Intent.ACTION_SHUTDOWN);        
-        f.addAction(Intent.ACTION_SCREEN_OFF);        
+        f.addAction(Intent.ACTION_SHUTDOWN);
+        f.addAction(Intent.ACTION_SCREEN_OFF);
         registerReceiver(mShutdownReceiver, new IntentFilter(f));
 
     }
@@ -70,12 +70,12 @@ public class MyPppoeService extends Service
     }
 
 
-private BroadcastReceiver mShutdownReceiver = 
+private BroadcastReceiver mShutdownReceiver =
     new BroadcastReceiver() {
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG , "onReceive :" +intent.getAction());
-       
+
         if ((Intent.ACTION_SCREEN_OFF).equals(intent.getAction())) {
                 operation = new PppoeOperation();
                 operation.disconnect();
