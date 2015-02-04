@@ -104,68 +104,50 @@ public class PppoeBroadcastReceiver extends BroadcastReceiver {
         }
 
         Log.d(TAG , ">>>>>onReceive :" +intent.getAction());
-        if (ETH_STATE_CHANGED_ACTION.equals(action)) {
-            if (!mInterfaceSelected.startsWith("eth"))
-                return;
+        if (!mInterfaceSelected.startsWith("eth"))
+            return;
 
-            int event = intent.getIntExtra(EXTRA_ETH_STATE, -1);
-            if (event == EVENT_HW_PHYCONNECTED) {
-                Log.d(TAG, "EVENT_HW_PHYCONNECTED");
-                if (mMandatoryDialTimer != null) {
-                    mMandatoryDialTimer.cancel();
-                    mMandatoryDialTimer = null;
-                }
-                mFirstAutoDialDone = true;
-
-                Log.d(TAG, "EVENT_HW_PHYCONNECTED trigger AUTO DIAL");
-
-                set_pppoe_running_flag();
-                operation.terminate();
-                operation.disconnect();
-                mHandler.sendEmptyMessageDelayed(PPPoEActivity.MSG_START_DIAL, 30000);
+        int event = intent.getIntExtra(EXTRA_ETH_STATE, -1);
+        if (event == EVENT_HW_PHYCONNECTED) {
+            Log.d(TAG, "EVENT_HW_PHYCONNECTED");
+            if (mMandatoryDialTimer != null) {
+                mMandatoryDialTimer.cancel();
+                mMandatoryDialTimer = null;
             }
-            else {
-                if (event == EVENT_HW_DISCONNECTED ) {
-                    Log.d(TAG, "EVENT_HW_DISCONNECTED");
-                }
-                else if (event == EVENT_HW_CONNECTED )
-                    Log.d(TAG, "EVENT_HW_CONNECTED");
-                else
-                    Log.d(TAG, "EVENT=" + event);
+            mFirstAutoDialDone = true;
 
-                if (event != EVENT_HW_DISCONNECTED&& !mFirstAutoDialDone) {
-                    Log.d(TAG, "EVENT_HW_PHYCONNECTED LOST");
-                    mFirstAutoDialDone = true;
-                    mMandatoryDialTimer = new Timer();
-                    TimerTask check_task = new TimerTask() {
-                        public void run()
-                        {
-                            Message message = new Message();
-                            message.what = PPPoEActivity.MSG_MANDATORY_DIAL;
-                            Log.d(TAG, "Send MSG_MANDATORY_DIAL");
-                            mHandler.sendMessage(message);
-                        }
-                    };
+            Log.d(TAG, "EVENT_HW_PHYCONNECTED trigger AUTO DIAL");
 
-                    //Timeout after 5 seconds
-                    mMandatoryDialTimer.schedule(check_task, 5000);
-                }
-            }
+            set_pppoe_running_flag();
+            operation.terminate();
+            operation.disconnect();
+            mHandler.sendEmptyMessageDelayed(PPPoEActivity.MSG_START_DIAL, 30000);
         }
-        else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
-            NetworkInfo info = (NetworkInfo) intent.getParcelableExtra(
-                    WifiManager.EXTRA_NETWORK_INFO);
-            if (!mInterfaceSelected.startsWith("wlan"))
-                return;
+        else {
+            if (event == EVENT_HW_DISCONNECTED ) {
+                Log.d(TAG, "EVENT_HW_DISCONNECTED");
+            }
+            else if (event == EVENT_HW_CONNECTED )
+                Log.d(TAG, "EVENT_HW_CONNECTED");
+            else
+                Log.d(TAG, "EVENT=" + event);
 
-            if (info.isConnected()) {
-                Log.d(TAG, "AUTO DIAL OVER WIFI");
-                set_pppoe_running_flag();
-                operation.terminate();
-                operation.disconnect();
+            if (event != EVENT_HW_DISCONNECTED&& !mFirstAutoDialDone) {
+                Log.d(TAG, "EVENT_HW_PHYCONNECTED LOST");
+                mFirstAutoDialDone = true;
+                mMandatoryDialTimer = new Timer();
+                TimerTask check_task = new TimerTask() {
+                    public void run()
+                    {
+                        Message message = new Message();
+                        message.what = PPPoEActivity.MSG_MANDATORY_DIAL;
+                        Log.d(TAG, "Send MSG_MANDATORY_DIAL");
+                        mHandler.sendMessage(message);
+                    }
+                };
 
-                mHandler = new PppoeHandler();
-                mHandler.sendEmptyMessageDelayed(PPPoEActivity.MSG_START_DIAL, 5000);
+                //Timeout after 5 seconds
+                mMandatoryDialTimer.schedule(check_task, 5000);
             }
         }
     }
