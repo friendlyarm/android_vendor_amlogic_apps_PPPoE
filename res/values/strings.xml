@@ -21,4 +21,5 @@
     <string name="pppoe_ppp_interface_occupied">ppp interface occupied!</string>
     <string name="amlogic_ok">OK</string>
     <string name="pppoe_auto_dial">Auto Dial on Reboot</string>
+    <string name="please_insert_the_cable">Please insert the cable</string>
 </resources>

@@ -4,6 +4,7 @@ import com.droidlogic.pppoe.PppoeManager;
 import com.droidlogic.pppoe.IPppoeManager;
 import com.droidlogic.pppoe.PppoeStateTracker;
 import com.droidlogic.pppoe.PppoeDevInfo;
+import com.droidlogic.app.SystemControlManager;
 
 import android.app.Activity;
 import android.net.ConnectivityManager;
@@ -23,6 +24,7 @@ public class PPPoEActivity extends Activity {
     private PppoeConfigDialog mPppoeConfigDialog;
     private PppoeDevInfo mPppoeInfo;
     private PppoeManager mPppoeManager;
+    private SystemControlManager mSystemControlManager = null;
     public static final int MSG_START_DIAL = 0xabcd0000;
     public static final int MSG_MANDATORY_DIAL = 0xabcd0010;
     public static final int MSG_CONNECT_TIMEOUT = 0xabcd0020;
@@ -36,9 +38,17 @@ public class PPPoEActivity extends Activity {
 
         Log.d(TAG, "Create PppoeConfigDialog");
         mPppoeConfigDialog = new PppoeConfigDialog(this);
-
+        mSystemControlManager = new SystemControlManager(this);
         ConnectivityManager cm = (ConnectivityManager)this.getSystemService
                                         ( Context.CONNECTIVITY_SERVICE);
+        String eth_link = mSystemControlManager.readSysFs("/sys/class/ethernet/linkspeed");
+        if (eth_link.contains("unlink")) {
+            Toast toast = Toast.makeText(this,this.getResources().getString(R.string.please_insert_the_cable),Toast.LENGTH_LONG);
+            toast.setGravity(Gravity.CENTER, 0, 0);
+            toast.show();
+            finish();
+        }
+
         NetworkInfo info = cm.getActiveNetworkInfo();
         if (info != null) {
            Log.d(TAG, info.toString());
