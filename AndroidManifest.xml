@@ -64,8 +64,7 @@
 	<receiver android:name=".PppoeBroadcastReceiver">
 		<intent-filter>
 		        <action android:name="android.intent.action.BOOT_COMPLETED"/>
-			<action android:name="android.net.ethernet.ETH_STATE_CHANGED"/>
-			<action android:name="android.net.wifi.STATE_CHANGE"/>
+			<action android:name="com.droidlogic.linkchange"/>
 		</intent-filter>
 	</receiver>
 				

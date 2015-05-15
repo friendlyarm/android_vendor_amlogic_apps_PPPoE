@@ -275,8 +275,13 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 
         if (connectStatus() != PppoeOperation.PPP_STATUS_CONNECTED)
         {
-            isDialogOfDisconnect = false;
-            this.setButton(BUTTON_POSITIVE, context.getText(R.string.pppoe_dial), this);
+            if (connectStatus() == PppoeOperation.PPP_STATUS_CONNECTING) {
+                isDialogOfDisconnect = false;
+                showWaitDialog(R.string.pppoe_dial_waiting_msg);
+            } else {
+                isDialogOfDisconnect = false;
+                this.setButton(BUTTON_POSITIVE, context.getText(R.string.pppoe_dial), this);
+            }
         }
         else {
             Log.d(TAG, "connectStatus is CONNECTED");
