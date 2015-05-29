@@ -37,10 +37,7 @@ public class PPPoEActivity extends Activity {
         setContentView(R.layout.main);
 
         Log.d(TAG, "Create PppoeConfigDialog");
-        mPppoeConfigDialog = new PppoeConfigDialog(this);
         mSystemControlManager = new SystemControlManager(this);
-        ConnectivityManager cm = (ConnectivityManager)this.getSystemService
-                                        ( Context.CONNECTIVITY_SERVICE);
         String eth_link = mSystemControlManager.readSysFs("/sys/class/ethernet/linkspeed");
         if (eth_link.contains("unlink")) {
             Toast toast = Toast.makeText(this,this.getResources().getString(R.string.please_insert_the_cable),Toast.LENGTH_LONG);
@@ -48,6 +45,9 @@ public class PPPoEActivity extends Activity {
             toast.show();
             finish();
         }
+        mPppoeConfigDialog = new PppoeConfigDialog(this);
+        ConnectivityManager cm = (ConnectivityManager)this.getSystemService
+                                        ( Context.CONNECTIVITY_SERVICE);
 
         NetworkInfo info = cm.getActiveNetworkInfo();
         if (info != null) {
@@ -65,8 +65,17 @@ public class PPPoEActivity extends Activity {
             Log.d(TAG, "GW: " + mPppoeInfo.getRouteAddr());
             Log.d(TAG, "DNS: " + mPppoeInfo.getDnsAddr());
         }
+        if (mPppoeConfigDialog != null) {
+            Log.d(TAG, "Show PppoeConfigDialog");
+            mPppoeConfigDialog.show();
+        }
+    }
 
-        Log.d(TAG, "Show PppoeConfigDialog");
-        mPppoeConfigDialog.show();
+
+    @Override
+    public void onDestroy() {
+        if (mPppoeConfigDialog != null)
+            mPppoeConfigDialog.dismiss();
+        mPppoeConfigDialog=null;
     }
 }

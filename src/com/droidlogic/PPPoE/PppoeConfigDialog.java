@@ -355,6 +355,11 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                 mDial.setEnabled(false);
         }
     }
+    @Override
+    public void dismiss() {
+        Log.d(TAG, "dismiss");
+        super.dismiss();
+    }
 
     void showWaitDialog(int id)
     {
