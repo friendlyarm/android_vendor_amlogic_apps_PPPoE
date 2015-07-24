@@ -511,7 +511,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                 }
             };
 
-            connect_timer.schedule(check_task, 60000 * 2);
+            connect_timer.schedule(check_task, 60000);
 
             showWaitDialog(R.string.pppoe_dial_waiting_msg);
             pppoe_state = PPPOE_STATE_CONNECTING;

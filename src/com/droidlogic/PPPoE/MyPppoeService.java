@@ -27,9 +27,11 @@ public class MyPppoeService extends Service
     private static final String TAG = "MyPppoeService";
     private NotificationManager mNM;
     private Handler mHandler;
+    private Handler mPppoeHandler;
     private PppoeOperation operation = null;
     private InterfaceObserver mInterfaceObserver;
     private INetworkManagementService mNMService;
+    public static final int MSG_PPPOE_START = 0xabcd0080;
 
     @Override
     public void onCreate() {
@@ -40,6 +42,7 @@ public class MyPppoeService extends Service
         mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
         mHandler = new DMRHandler();
+        mPppoeHandler = new PppoeHandler();
         mInterfaceObserver = new InterfaceObserver();
         try {
             mNMService.registerObserver(mInterfaceObserver);
@@ -100,23 +103,36 @@ public class MyPppoeService extends Service
         }
     }
 
-
-private BroadcastReceiver mShutdownReceiver =
-    new BroadcastReceiver() {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-        Log.d(TAG , "onReceive :" +intent.getAction());
-
-        if ((Intent.ACTION_SCREEN_OFF).equals(intent.getAction())) {
-            operation = new PppoeOperation();
-            operation.disconnect();
+    private class PppoeHandler extends Handler
+    {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what) {
+                case MSG_PPPOE_START:
+                    updateInterfaceState("eth0", true);
+                    break;
+                default:
+                    Log.d(TAG, "handleMessage: " + msg.what);
+                    break;
+            }
         }
-        if ((Intent.ACTION_SCREEN_ON).equals(intent.getAction())) {
-            updateInterfaceState("eth0", true);
-        }
-
     }
-};
-
+    private BroadcastReceiver mShutdownReceiver =
+        new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG , "onReceive :" +intent.getAction());
+            if ((Intent.ACTION_SCREEN_OFF).equals(intent.getAction())) {
+                operation = new PppoeOperation();
+                operation.disconnect();
+            }
+            if ((Intent.ACTION_SCREEN_ON).equals(intent.getAction())) {
+                operation = new PppoeOperation();
+                operation.disconnect();
+                mPppoeHandler.sendEmptyMessageDelayed(MSG_PPPOE_START, 10000);
+            }
+        }
+    };
 }
 
