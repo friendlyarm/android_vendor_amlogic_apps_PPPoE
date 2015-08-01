@@ -209,7 +209,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                     @Override
                     public void onCheckedChanged(CompoundButton buttonView,
                             boolean isChecked) {
-                        saveAutoDialFlag();
+                        //saveAutoDialFlag();
                         if (isChecked) {
                             Log.d(TAG, "AutoDial Selected");
                         }else{
@@ -588,6 +588,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     {
         switch (which) {
         case BUTTON_POSITIVE:
+            saveAutoDialFlag();
             if (isDialogOfDisconnect) {
                 if (connectStatus() != PppoeOperation.PPP_STATUS_CONNECTED) {
                     Log.d(TAG, "DANGER: SHOULD CONNECTED when in DialogOfDisconnect");
@@ -599,6 +600,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
             break;
         case BUTTON_NEGATIVE:
             Log.d(TAG, "User click Discard button, exit APK");
+            saveAutoDialFlag();
             clearSelf();
             break;
         default:
