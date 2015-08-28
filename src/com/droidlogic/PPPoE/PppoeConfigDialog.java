@@ -64,7 +64,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
     public static final String INFO_NETWORK_INTERFACE_SELECTED = "network_if_selected";
     public static final String INFO_AUTO_DIAL_FLAG = "auto_dial_flag";
 
-    private final String TAG = "PppoeCfgDlg";
+    private final String TAG = "PppoeConfigDialog";
     private View mView;
     private EditText mPppoeName;
     private EditText mPppoePasswd;
@@ -363,6 +363,9 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
 
     void showWaitDialog(int id)
     {
+        if (waitDialog == null) {
+            return;
+        }
         waitDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         waitDialog.setTitle("");
         waitDialog.setMessage(this.context.getResources().getString(id));
@@ -488,7 +491,8 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
                         case PPPoEActivity.MSG_CONNECT_TIMEOUT:
                             Log.d(TAG, "handleMessage: MSG_CONNECT_TIMEOUT");
                             pppoe_state = PPPOE_STATE_CONNECT_FAILED;
-                            waitDialog.cancel();
+                            if (waitDialog != null)
+                                waitDialog.cancel();
                             showAlertDialog(context.getResources().getString(R.string.pppoe_connect_failed));
                             SystemProperties.set("net.pppoe.isConnected", "false");
                             break;
@@ -699,6 +703,7 @@ public class PppoeConfigDialog extends AlertDialog implements DialogInterface.On
             Log.d(TAG, "unregisterReceiver pppoeReceiver");
             context.unregisterReceiver(pppoeReceiver);
         }
+        ((PPPoEActivity)context).onDestroy();
         ((PPPoEActivity)context).finish();
 
         /*

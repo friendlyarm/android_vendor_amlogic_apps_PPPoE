@@ -24,10 +24,7 @@ public class PppoeBroadcastReceiver extends BroadcastReceiver {
         "android.intent.action.BOOT_COMPLETED";
     public static final String ETH_STATE_CHANGED_ACTION =
         "android.net.ethernet.ETH_STATE_CHANGED";
-	public static final String EXTRA_ETH_STATE = "eth_state";
-	public static final int EVENT_HW_PHYCONNECTED = 5;
-	public static final int EVENT_HW_DISCONNECTED                   = 4;
-    public static final int EVENT_HW_CONNECTED                      = 3;
+    public static final int DELAY_TIME = 2000;
     private Handler mHandler = null;
     private boolean mAutoDialFlag = false;
     private String mInterfaceSelected = null;
@@ -88,9 +85,9 @@ public class PppoeBroadcastReceiver extends BroadcastReceiver {
         mUserName = getUserName(context);
         mPassword = getPassword(context);
         if (ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
-                context.startService(new Intent(context,
-                     MyPppoeService.class));
-                mFirstAutoDialDone = true;
+            context.startService(new Intent(context,
+                 MyPppoeService.class));
+            mFirstAutoDialDone = true;
         }
 
         if (null == mInterfaceSelected
@@ -99,7 +96,6 @@ public class PppoeBroadcastReceiver extends BroadcastReceiver {
             || null == mPassword) {
             mFirstAutoDialDone = false;
             return;
-
         }
 
         if (mHandler == null) {
@@ -108,63 +104,20 @@ public class PppoeBroadcastReceiver extends BroadcastReceiver {
         if (operation == null) {
             operation = new PppoeOperation();
         }
-        Log.d(TAG , ">>>>>onReceive :" +intent.getAction());
+        Log.d(TAG , "onReceive :" +intent.getAction());
         if ("com.droidlogic.linkchange".equals(action) || mFirstAutoDialDone) {
-            mFirstAutoDialDone = false;
-            if (!mInterfaceSelected.startsWith("eth") )
-                return;
-            int event = intent.getIntExtra(EXTRA_ETH_STATE, -1);
-            if (event == EVENT_HW_PHYCONNECTED) {
-                Log.d(TAG, "EVENT_HW_PHYCONNECTED");
-                if (mMandatoryDialTimer != null) {
-                    mMandatoryDialTimer.cancel();
-                    mMandatoryDialTimer = null;
-                }
-
-                Log.d(TAG, "EVENT_HW_PHYCONNECTED trigger AUTO DIAL");
-
-                set_pppoe_running_flag();
-                operation.terminate();
-                operation.disconnect();
-                mHandler.sendEmptyMessageDelayed(PPPoEActivity.MSG_START_DIAL, 30000);
-            }
-            else {
-                if (event == EVENT_HW_DISCONNECTED ) {
-                    Log.d(TAG, "EVENT_HW_DISCONNECTED");
-                }
-                else if (event == EVENT_HW_CONNECTED )
-                    Log.d(TAG, "EVENT_HW_CONNECTED");
-                else
-                    Log.d(TAG, "EVENT=" + event);
-
-                if (event != EVENT_HW_DISCONNECTED) {
-                    Log.d(TAG, "EVENT_HW_PHYCONNECTED LOST");
-                    mMandatoryDialTimer = new Timer();
-                    TimerTask check_task = new TimerTask() {
-                        public void run()
-                        {
-                            Message message = new Message();
-                            message.what = PPPoEActivity.MSG_MANDATORY_DIAL;
-                            Log.d(TAG, "Send MSG_MANDATORY_DIAL");
-                            mHandler.sendMessage(message);
-                        }
-                    };
-
-                    //Timeout after 5 seconds
-                    mMandatoryDialTimer.schedule(check_task, 5000);
-                }
+            if (mFirstAutoDialDone) {
+                mHandler.sendEmptyMessageDelayed(PPPoEActivity.MSG_MANDATORY_DIAL, DELAY_TIME);
+                mFirstAutoDialDone = false;
+            } else {
+                if (!mInterfaceSelected.startsWith("eth") )
+                    return;
+                //Timeout after 5 seconds
+                mHandler.sendEmptyMessageDelayed(PPPoEActivity.MSG_START_DIAL, DELAY_TIME);
             }
         }
     }
-    public static boolean isEthConnected(Context context) {
-        ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        State mEthState = connManager.getNetworkInfo(ConnectivityManager.TYPE_ETHERNET).getState();
-        if (State.CONNECTED == mEthState) {
-            return true;
-        }else{
-            return false;
-        }
-    }
+
 
     void set_pppoe_running_flag()
     {
@@ -192,27 +145,24 @@ public class PppoeBroadcastReceiver extends BroadcastReceiver {
             super.handleMessage(msg);
 
             switch (msg.what) {
-            case PPPoEActivity.MSG_MANDATORY_DIAL:
-                Log.d(TAG, "handleMessage: MSG_MANDATORY_DIAL");
-                set_pppoe_running_flag();
-                operation.terminate();
-
-                operation.disconnect();
-
-                mHandler.sendEmptyMessageDelayed(PPPoEActivity.MSG_START_DIAL, 2000);
+                case PPPoEActivity.MSG_MANDATORY_DIAL:
+                    Log.d(TAG, "handleMessage: MSG_MANDATORY_DIAL");
+                    set_pppoe_running_flag();
+                    operation.terminate();
+                    operation.disconnect();
+                    mHandler.sendEmptyMessageDelayed(PPPoEActivity.MSG_START_DIAL, DELAY_TIME);
                 break;
 
-            case PPPoEActivity.MSG_START_DIAL:
-                Log.d(TAG, "handleMessage: MSG_START_DIAL");
-                operation.connect(mInterfaceSelected, mUserName, mPassword);
+                case PPPoEActivity.MSG_START_DIAL:
+                    Log.d(TAG, "handleMessage: MSG_START_DIAL");
+                    set_pppoe_running_flag();
+                    operation.connect(mInterfaceSelected, mUserName, mPassword);
                 break;
 
-            default:
-                Log.d(TAG, "handleMessage: " + msg.what);
+                default:
+                    Log.d(TAG, "handleMessage: " + msg.what);
                 break;
             }
-
-
         }
     }
 }

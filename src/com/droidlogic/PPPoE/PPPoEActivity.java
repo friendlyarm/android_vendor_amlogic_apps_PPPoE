@@ -34,8 +34,6 @@ public class PPPoEActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
-
         Log.d(TAG, "Create PppoeConfigDialog");
         mSystemControlManager = new SystemControlManager(this);
         String eth_link = mSystemControlManager.readSysFs("/sys/class/ethernet/linkspeed");
@@ -44,36 +42,35 @@ public class PPPoEActivity extends Activity {
             toast.setGravity(Gravity.CENTER, 0, 0);
             toast.show();
             finish();
-        }
-        mPppoeConfigDialog = new PppoeConfigDialog(this);
-        ConnectivityManager cm = (ConnectivityManager)this.getSystemService
-                                        ( Context.CONNECTIVITY_SERVICE);
-
-        NetworkInfo info = cm.getActiveNetworkInfo();
-        if (info != null) {
-           Log.d(TAG, info.toString());
-        }
-
-        IBinder b = ServiceManager.getService("pppoe");
-        IPppoeManager PppoeService = IPppoeManager.Stub.asInterface(b);
-        mPppoeManager = new PppoeManager(PppoeService, this);
-
-        mPppoeInfo = mPppoeManager.getSavedPppoeConfig();
-        if (mPppoeInfo != null) {
-            Log.d(TAG, "IP: " + mPppoeInfo.getIpAddress());
-            Log.d(TAG, "MASK: " + mPppoeInfo.getNetMask());
-            Log.d(TAG, "GW: " + mPppoeInfo.getRouteAddr());
-            Log.d(TAG, "DNS: " + mPppoeInfo.getDnsAddr());
-        }
-        if (mPppoeConfigDialog != null) {
-            Log.d(TAG, "Show PppoeConfigDialog");
-            mPppoeConfigDialog.show();
+        } else {
+            setContentView(R.layout.main);
+            mPppoeConfigDialog = new PppoeConfigDialog(this);
+            ConnectivityManager cm = (ConnectivityManager)this.getSystemService( Context.CONNECTIVITY_SERVICE);
+            NetworkInfo info = cm.getActiveNetworkInfo();
+            if (info != null) {
+               Log.d(TAG, info.toString());
+            }
+            IBinder b = ServiceManager.getService("pppoe");
+            IPppoeManager PppoeService = IPppoeManager.Stub.asInterface(b);
+            mPppoeManager = new PppoeManager(PppoeService, this);
+            mPppoeInfo = mPppoeManager.getSavedPppoeConfig();
+            if (mPppoeInfo != null) {
+                Log.d(TAG, "IP: " + mPppoeInfo.getIpAddress());
+                Log.d(TAG, "MASK: " + mPppoeInfo.getNetMask());
+                Log.d(TAG, "GW: " + mPppoeInfo.getRouteAddr());
+                Log.d(TAG, "DNS: " + mPppoeInfo.getDnsAddr());
+            }
+            if (mPppoeConfigDialog != null) {
+                Log.d(TAG, "Show PppoeConfigDialog");
+                mPppoeConfigDialog.show();
+            }
         }
     }
 
 
     @Override
     public void onDestroy() {
+        super.onDestroy();
         if (mPppoeConfigDialog != null)
             mPppoeConfigDialog.dismiss();
         mPppoeConfigDialog=null;

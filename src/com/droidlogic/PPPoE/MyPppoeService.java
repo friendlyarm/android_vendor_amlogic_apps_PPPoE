@@ -10,38 +10,48 @@ import android.content.Intent;
 import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
-import com.amlogic.pppoe.PppoeOperation;
-import com.android.server.net.BaseNetworkObserver;
 import android.os.INetworkManagementService;
 import android.os.ServiceManager;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
-
+import android.net.wifi.WifiManager;
+import com.amlogic.pppoe.PppoeOperation;
+import com.android.server.net.BaseNetworkObserver;
+import com.droidlogic.app.SystemControlManager;
 
 public class MyPppoeService extends Service
 {
     private static final String TAG = "MyPppoeService";
+    private static final String eth_device_sysfs = "/sys/class/ethernet/linkspeed";
     private NotificationManager mNM;
-    private Handler mHandler;
+    private WifiManager mWifiManager;
     private Handler mPppoeHandler;
     private PppoeOperation operation = null;
     private InterfaceObserver mInterfaceObserver;
     private INetworkManagementService mNMService;
+    private boolean mScreenon;
+    private boolean mConnected;
+    private int mTimes;
     public static final int MSG_PPPOE_START = 0xabcd0080;
-
+    private static final int PPPOE_DELAYD = 10000;
+    private Context mContext;
+    private SystemControlManager mSystemControlManager;
     @Override
     public void onCreate() {
-        Log.d(TAG, ">>>>>>onCreate");
+        Log.d(TAG, "onCreate");
         IBinder b = ServiceManager.getService(Context.NETWORKMANAGEMENT_SERVICE);
         mNMService = INetworkManagementService.Stub.asInterface(b);
-
+        mScreenon=false;
+        mContext=this;
         mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-
-        mHandler = new DMRHandler();
+        mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+        mSystemControlManager = new SystemControlManager(mContext);
+        operation = new PppoeOperation();
         mPppoeHandler = new PppoeHandler();
         mInterfaceObserver = new InterfaceObserver();
         try {
@@ -49,10 +59,6 @@ public class MyPppoeService extends Service
         } catch (RemoteException e) {
             Log.e(TAG, "Could not register InterfaceObserver " + e);
         }
-
-        /* start check after 5s */
-        mHandler.sendEmptyMessageDelayed(0, 5000);
-
         IntentFilter f = new IntentFilter();
 
         f.addAction(Intent.ACTION_SHUTDOWN);
@@ -82,27 +88,41 @@ public class MyPppoeService extends Service
             this.sendBroadcast(intent);
         }
     }
+    private boolean getAutoDialFlag(Context context) {
+        SharedPreferences sharedata = context.getSharedPreferences("inputdata", 0);
+        if (sharedata != null && sharedata.getAll().size() > 0)
+        {
+            return sharedata.getBoolean(PppoeConfigDialog.INFO_AUTO_DIAL_FLAG, false);
+        }
+        return false;
+    }
+
+    private boolean isEthDeviceAdded(Context context) {
+        String str = mSystemControlManager.readSysFs(eth_device_sysfs);
+        if (str == null)
+            return false ;
+        if (str.contains("unlink")) {
+            return false;
+        }else{
+            return true;
+        }
+    }
 
     private class InterfaceObserver extends BaseNetworkObserver {
         @Override
         public void interfaceLinkStateChanged(String iface, boolean up) {
-            updateInterfaceState(iface, up);
-        }
-
-    }
-
-    private class DMRHandler extends Handler
-    {
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-
-            Log.d(TAG, "handleMessage");
-            /* check per 10s */
-            mHandler.sendEmptyMessageDelayed(0, 1000000);
+            Log.d(TAG , "interfaceLinkStateChanged+"+iface+"up"+up);
+            if (iface.contains("eth0") && up) {
+                if (!mScreenon) {
+                    if (getAutoDialFlag(mContext)) {
+                         mPppoeHandler.sendEmptyMessageDelayed(MSG_PPPOE_START, PPPOE_DELAYD);
+                    }
+                }
+            } else if (iface.contains("ppp0")) {
+                mConnected = up;
+            }
         }
     }
-
     private class PppoeHandler extends Handler
     {
         @Override
@@ -110,7 +130,26 @@ public class MyPppoeService extends Service
             super.handleMessage(msg);
             switch (msg.what) {
                 case MSG_PPPOE_START:
-                    updateInterfaceState("eth0", true);
+                    if (!mConnected) {
+                        int wifiState = mWifiManager.getWifiState();
+                        if ((wifiState == WifiManager.WIFI_STATE_ENABLING) ||
+                            (wifiState == WifiManager.WIFI_STATE_ENABLED)) {
+                            mWifiManager.setWifiEnabled(false);
+                        } else {
+                            if (isEthDeviceAdded(mContext))
+                                updateInterfaceState("eth0", true);
+                        }
+                        if (mTimes < 3) {
+                            mPppoeHandler.sendEmptyMessageDelayed(MSG_PPPOE_START, PPPOE_DELAYD+mTimes*1000);
+                            mTimes++;
+                        } else {
+                            mScreenon = false;
+                            mTimes = 0;
+                        }
+                    } else {
+                        mScreenon = false;
+                        mTimes = 0;
+                    }
                     break;
                 default:
                     Log.d(TAG, "handleMessage: " + msg.what);
@@ -123,14 +162,18 @@ public class MyPppoeService extends Service
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d(TAG , "onReceive :" +intent.getAction());
-            if ((Intent.ACTION_SCREEN_OFF).equals(intent.getAction())) {
-                operation = new PppoeOperation();
-                operation.disconnect();
-            }
-            if ((Intent.ACTION_SCREEN_ON).equals(intent.getAction())) {
-                operation = new PppoeOperation();
-                operation.disconnect();
-                mPppoeHandler.sendEmptyMessageDelayed(MSG_PPPOE_START, 10000);
+            mScreenon = false;
+            if (getAutoDialFlag(mContext)) {
+                if ((Intent.ACTION_SCREEN_OFF).equals(intent.getAction())) {
+                    mScreenon = true;
+                    operation.disconnect();
+                }
+                if ((Intent.ACTION_SCREEN_ON).equals(intent.getAction())) {
+                    mScreenon = true;
+                    mConnected = false;
+                    mTimes=0;
+                    mPppoeHandler.sendEmptyMessageDelayed(MSG_PPPOE_START, PPPOE_DELAYD);
+                }
             }
         }
     };
